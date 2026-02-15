@@ -29,7 +29,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             children: [
               DropdownButtonFormField<CategoryType>(
                 decoration: const InputDecoration(labelText: 'Type'),
-                value: _filterType,
+                initialValue: _filterType,
                 items: const [
                   DropdownMenuItem(value: null, child: Text('All')),
                   DropdownMenuItem(
@@ -104,7 +104,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         title: const Text('Transactions'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: const Icon(Icons.filter_list_alt),
             onPressed: _showFilterDialog,
           ),
         ],
@@ -162,7 +162,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   color: Colors.red,
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  child: const Icon(Icons.delete_outlined, color: Colors.white),
                 ),
                 confirmDismiss: (direction) async {
                   return await showDialog(
@@ -212,7 +212,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${tx.amount.toStringAsFixed(2)}',
+                        tx.amount.toStringAsFixed(2),
                         style: TextStyle(
                           color: tx.type == CategoryType.income
                               ? Colors.green

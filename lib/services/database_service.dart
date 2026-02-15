@@ -25,97 +25,7 @@ class DatabaseService {
 
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'hacksilver_ledger.db');
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Add new columns to categories if they don't exist (SQLite doesn't support IF NOT EXISTS for columns easily in standard SQL, but here we assume upgrade path)
-      // Attempting to add columns. If it fails (e.g. they exist), we catch it or assume it's fine for this simple app context.
-      // Better: check if column exists, but for now we follow the linear upgrade.
-      try {
-        await db.execute('ALTER TABLE categories ADD COLUMN fontFamily TEXT');
-        await db.execute('ALTER TABLE categories ADD COLUMN fontPackage TEXT');
-      } catch (e) {
-        // Ignore
-      }
-    }
-
-    if (oldVersion < 3) {
-      // Ensure recurring_transactions table exists
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS recurring_transactions(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT,
-          amount REAL,
-          type INTEGER,
-          categoryId INTEGER,
-          accountId INTEGER,
-          frequency INTEGER,
-          startDate TEXT,
-          nextDueDate TEXT,
-          isActive INTEGER,
-          notes TEXT,
-          FOREIGN KEY(categoryId) REFERENCES categories(id)
-        )
-      ''');
-    }
-
-    if (oldVersion < 4) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS loans(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT,
-          amount REAL,
-          interestRate REAL,
-          tenureMonths INTEGER,
-          type INTEGER,
-          startDate TEXT,
-          emiAmount REAL,
-          amountPaid REAL,
-          isClosed INTEGER,
-          notes TEXT
-        )
-      ''');
-    }
-
-    if (oldVersion < 5) {
-      try {
-        await db.execute(
-          'ALTER TABLE transactions ADD COLUMN originalAmount REAL',
-        );
-        await db.execute(
-          'ALTER TABLE transactions ADD COLUMN originalCurrency TEXT',
-        );
-      } catch (e) {
-        // Ignore if already exists
-      }
-    }
-
-    if (oldVersion < 6) {
-      // Add loanId to transactions
-      try {
-        await db.execute('ALTER TABLE transactions ADD COLUMN loanId INTEGER');
-      } catch (e) {
-        // Ignore
-      }
-    }
-
-    if (oldVersion < 7) {
-      // Add transferAccountId to transactions
-      try {
-        await db.execute(
-          'ALTER TABLE transactions ADD COLUMN transferAccountId INTEGER',
-        );
-      } catch (e) {
-        // Ignore
-      }
-    }
+    return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -153,6 +63,8 @@ class DatabaseService {
         notes TEXT,
         originalAmount REAL,
         originalCurrency TEXT,
+        loanId INTEGER,
+        transferAccountId INTEGER,
         FOREIGN KEY(categoryId) REFERENCES categories(id),
         FOREIGN KEY(accountId) REFERENCES accounts(id)
       )

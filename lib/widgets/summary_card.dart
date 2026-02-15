@@ -56,7 +56,7 @@ class SummaryCard extends StatelessWidget {
                     _buildStat(
                       label: 'Income',
                       amount: txProvider.totalIncome,
-                      icon: Icons.arrow_downward,
+                      icon: Icons.arrow_downward_rounded,
                       color: Colors.lightGreenAccent,
                       symbol: currencySymbol,
                     ),
@@ -64,7 +64,7 @@ class SummaryCard extends StatelessWidget {
                     _buildStat(
                       label: 'Expense',
                       amount: txProvider.totalExpense,
-                      icon: Icons.arrow_upward,
+                      icon: Icons.arrow_upward_rounded,
                       color: Colors.redAccent,
                       symbol: currencySymbol,
                     ),

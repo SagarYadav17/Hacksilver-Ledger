@@ -163,7 +163,10 @@ class LoanList extends StatelessWidget {
                               ),
                             ),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.grey),
+                            icon: const Icon(
+                              Icons.delete_outlined,
+                              color: Colors.grey,
+                            ),
                             onPressed: () {
                               provider.deleteLoan(loan.id!);
                             },

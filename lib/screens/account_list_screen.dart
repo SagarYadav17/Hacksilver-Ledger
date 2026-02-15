@@ -33,7 +33,7 @@ class AccountListScreen extends StatelessWidget {
                   color: Colors.red,
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  child: const Icon(Icons.delete_outlined, color: Colors.white),
                 ),
                 confirmDismiss: (direction) async {
                   return await showDialog(
@@ -107,13 +107,13 @@ class AccountListScreen extends StatelessWidget {
   IconData _getIconForType(AccountType type) {
     switch (type) {
       case AccountType.cash:
-        return Icons.money;
+        return Icons.payments_outlined;
       case AccountType.bank:
-        return Icons.account_balance;
+        return Icons.account_balance_outlined;
       case AccountType.creditCard:
-        return Icons.credit_card;
+        return Icons.credit_card_outlined;
       case AccountType.other:
-        return Icons.account_balance_wallet;
+        return Icons.account_balance_wallet_outlined;
     }
   }
 }

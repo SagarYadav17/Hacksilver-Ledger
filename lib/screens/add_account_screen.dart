@@ -87,7 +87,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 },
               ),
               DropdownButtonFormField<AccountType>(
-                value: _type,
+                initialValue: _type,
                 items: AccountType.values
                     .map(
                       (type) => DropdownMenuItem(

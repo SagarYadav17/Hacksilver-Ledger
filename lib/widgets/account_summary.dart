@@ -81,13 +81,13 @@ class AccountSummary extends StatelessWidget {
   IconData _getIconForType(AccountType type) {
     switch (type) {
       case AccountType.cash:
-        return Icons.money;
+        return Icons.payments_outlined;
       case AccountType.bank:
-        return Icons.account_balance;
+        return Icons.account_balance_outlined;
       case AccountType.creditCard:
-        return Icons.credit_card;
+        return Icons.credit_card_outlined;
       case AccountType.other:
-        return Icons.account_balance_wallet;
+        return Icons.account_balance_wallet_outlined;
     }
   }
 

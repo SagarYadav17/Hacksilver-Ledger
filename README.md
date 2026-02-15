@@ -66,7 +66,7 @@ A comprehensive Personal Finance Management application built with Flutter. This
 1.  **Clone the repository**:
 
     ```bash
-    git clone https://github.com/yourusername/hacksilver_ledger.git
+    git clone https://github.com/sagaryadav17/hacksilver_ledger.git
     cd hacksilver_ledger
     ```
 

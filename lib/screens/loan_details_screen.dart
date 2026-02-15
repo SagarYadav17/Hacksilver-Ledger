@@ -101,16 +101,16 @@ class LoanDetailsScreen extends StatelessWidget {
                         children: [
                           _buildsummaryItem(
                             'Amount',
-                            '${loan.amount.toStringAsFixed(0)}',
+                            loan.amount.toStringAsFixed(0),
                           ),
                           _buildsummaryItem(
                             'Paid',
-                            '${loan.amountPaid.toStringAsFixed(0)}',
+                            loan.amountPaid.toStringAsFixed(0),
                             color: Colors.green,
                           ),
                           _buildsummaryItem(
                             'Remaining',
-                            '${(loan.amount - loan.amountPaid).toStringAsFixed(0)}',
+                            (loan.amount - loan.amountPaid).toStringAsFixed(0),
                             color: Colors.red,
                           ),
                         ],
@@ -197,7 +197,7 @@ class LoanDetailsScreen extends StatelessWidget {
                             title: Text(tx.title),
                             subtitle: Text(DateFormat.yMMMd().format(tx.date)),
                             trailing: Text(
-                              '${tx.amount.toStringAsFixed(2)}',
+                              tx.amount.toStringAsFixed(2),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: tx.type == CategoryType.income

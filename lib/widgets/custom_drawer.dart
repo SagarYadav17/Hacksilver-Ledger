@@ -21,7 +21,7 @@ class CustomDrawer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                Icons.account_balance_wallet,
+                Icons.account_balance_wallet_outlined,
                 color: colorScheme.primary,
                 size: 48,
               ),
@@ -42,18 +42,18 @@ class CustomDrawer extends StatelessWidget {
           label: Text('Dashboard'),
         ),
         const NavigationDrawerDestination(
-          icon: Icon(Icons.list_outlined),
-          selectedIcon: Icon(Icons.list),
+          icon: Icon(Icons.receipt_long_outlined),
+          selectedIcon: Icon(Icons.receipt_long),
           label: Text('Transactions'),
         ),
         const NavigationDrawerDestination(
-          icon: Icon(Icons.repeat),
-          selectedIcon: Icon(Icons.repeat_on),
+          icon: Icon(Icons.event_repeat_outlined),
+          selectedIcon: Icon(Icons.event_repeat),
           label: Text('Recurring'),
         ),
         const NavigationDrawerDestination(
-          icon: Icon(Icons.monetization_on_outlined),
-          selectedIcon: Icon(Icons.monetization_on),
+          icon: Icon(Icons.credit_score_outlined),
+          selectedIcon: Icon(Icons.credit_score),
           label: Text('Loans'),
         ),
         const NavigationDrawerDestination(

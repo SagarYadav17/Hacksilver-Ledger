@@ -167,7 +167,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
               ListTile(
                 title: const Text('Start Date'),
                 subtitle: Text(DateFormat.yMMMd().format(_startDate)),
-                trailing: const Icon(Icons.calendar_today),
+                trailing: const Icon(Icons.calendar_month_outlined),
                 onTap: _presentDatePicker,
               ),
 

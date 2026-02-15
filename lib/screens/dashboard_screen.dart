@@ -87,7 +87,10 @@ class DashboardScreen extends StatelessWidget {
                         color: Colors.red,
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.only(right: 20),
-                        child: const Icon(Icons.delete, color: Colors.white),
+                        child: const Icon(
+                          Icons.delete_outlined,
+                          color: Colors.white,
+                        ),
                       ),
                       confirmDismiss: (direction) async {
                         return await showDialog(
@@ -134,7 +137,7 @@ class DashboardScreen extends StatelessWidget {
                         title: Text(tx.title),
                         subtitle: Text(tx.date.toString().substring(0, 10)),
                         trailing: Text(
-                          '${tx.amount.toStringAsFixed(2)}',
+                          tx.amount.toStringAsFixed(2),
                           style: TextStyle(
                             color: tx.type == CategoryType.income
                                 ? Colors.green

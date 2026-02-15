@@ -110,7 +110,7 @@ class _AddRecurringTransactionScreenState
                         .toList();
 
                     return DropdownButtonFormField<int>(
-                      value: _selectedCategoryId,
+                      initialValue: _selectedCategoryId,
                       hint: const Text('Select Category'),
                       items: categories.map((cat) {
                         return DropdownMenuItem(
@@ -146,7 +146,7 @@ class _AddRecurringTransactionScreenState
 
                 // Frequency Dropdown
                 DropdownButtonFormField<Frequency>(
-                  value: _selectedFrequency,
+                  initialValue: _selectedFrequency,
                   decoration: const InputDecoration(labelText: 'Frequency'),
                   items: Frequency.values.map((f) {
                     String label = f.toString().split('.').last;
@@ -165,7 +165,7 @@ class _AddRecurringTransactionScreenState
                 ListTile(
                   title: const Text('Start Date'),
                   subtitle: Text(DateFormat.yMMMd().format(_startDate)),
-                  trailing: const Icon(Icons.calendar_today),
+                  trailing: const Icon(Icons.calendar_month_outlined),
                   onTap: _presentDatePicker,
                 ),
                 const SizedBox(height: 24),

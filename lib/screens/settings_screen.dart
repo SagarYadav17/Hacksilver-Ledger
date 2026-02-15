@@ -147,7 +147,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.download),
+            leading: const Icon(Icons.download_outlined),
             title: const Text('Backup Data'),
             subtitle: const Text('Export database to a file'),
             onTap: () async {
@@ -155,7 +155,7 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.upload),
+            leading: const Icon(Icons.upload_outlined),
             title: const Text('Restore Data'),
             subtitle: const Text('Import database from a file'),
             onTap: () async {
@@ -222,7 +222,7 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
             child: isSelected
-                ? const Icon(Icons.check, color: Colors.white)
+                ? const Icon(Icons.check_rounded, color: Colors.white)
                 : null,
           ),
           const SizedBox(height: 4),

@@ -275,7 +275,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 ),
                                 border: OutlineInputBorder(),
                               ),
-                              value: _selectedAccountId,
+                              initialValue: _selectedAccountId,
                               validator: (val) {
                                 if (val == null) {
                                   return 'Select source account';
@@ -299,7 +299,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 8.0),
                               child: Icon(
-                                Icons.arrow_downward,
+                                Icons.arrow_downward_rounded,
                                 color: Colors.blue,
                                 size: 32,
                               ),
@@ -310,7 +310,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 prefixIcon: Icon(Icons.savings_outlined),
                                 border: OutlineInputBorder(),
                               ),
-                              value: _transferAccountId,
+                              initialValue: _transferAccountId,
                               validator: (val) {
                                 if (val == null) {
                                   return 'Select destination account';
@@ -342,9 +342,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     return DropdownButtonFormField<int>(
                       decoration: const InputDecoration(
                         labelText: 'Account',
-                        prefixIcon: Icon(Icons.account_balance_wallet),
+                        prefixIcon: Icon(Icons.account_balance_wallet_outlined),
                       ),
-                      value: _selectedAccountId,
+                      initialValue: _selectedAccountId,
                       validator: (val) {
                         if (val == null) {
                           return 'Please select an account';
@@ -409,7 +409,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Currency',
                         ),
-                        value: _originalCurrency,
+                        initialValue: _originalCurrency,
                         items: ['USD', 'EUR', 'GBP', 'INR']
                             .map(
                               (c) => DropdownMenuItem(value: c, child: Text(c)),
@@ -460,7 +460,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
               DropdownButtonFormField<Category>(
                 decoration: const InputDecoration(labelText: 'Category *'),
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 items: categories.map((cat) {
                   return DropdownMenuItem(
                     value: cat,
@@ -506,7 +506,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       helperText:
                           'Select a loan if this transaction is related to one',
                     ),
-                    value: _selectedLoanId,
+                    initialValue: _selectedLoanId,
                     items: [
                       const DropdownMenuItem<int>(
                         value: null,
@@ -520,7 +520,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
-                      }).toList(),
+                      }),
                     ],
                     onChanged: (val) {
                       setState(() {

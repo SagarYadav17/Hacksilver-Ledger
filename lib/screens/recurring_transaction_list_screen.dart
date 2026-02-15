@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/recurring_transaction_provider.dart';
-import '../models/recurring_transaction.dart';
 import '../models/category.dart';
 import '../providers/category_provider.dart';
 import '../widgets/custom_drawer.dart';
@@ -78,7 +77,10 @@ class RecurringTransactionListScreen extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.grey),
+                        icon: const Icon(
+                          Icons.delete_outlined,
+                          color: Colors.grey,
+                        ),
                         onPressed: () {
                           provider.deleteRecurringTransaction(tx.id!);
                         },
