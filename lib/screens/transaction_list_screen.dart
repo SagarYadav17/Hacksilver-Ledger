@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
@@ -48,7 +49,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<CategoryType?>(
                     decoration: const InputDecoration(labelText: 'Type'),
-                    value: tempType,
+                    initialValue: tempType,
                     items: const [
                       DropdownMenuItem(value: null, child: Text('All')),
                       DropdownMenuItem(
@@ -173,29 +174,38 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.search_off_outlined,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        Icons.search_off_outlined,
+                        size: 40,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 20),
                     Text(
                       'No transactions found',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Text(
                       'Try adjusting filters or add a new transaction.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     FilledButton.icon(
                       onPressed: () {
+                        HapticFeedback.lightImpact();
                         Navigator.of(context).pushNamed('/add-transaction');
                       },
                       icon: const Icon(Icons.add),
@@ -208,9 +218,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.only(bottom: 96),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
             itemCount: txs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 4),
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final tx = txs[index];
               final category =
@@ -232,10 +242,17 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 key: ValueKey(tx.id),
                 direction: DismissDirection.endToStart,
                 background: Container(
-                  color: Colors.red,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.error,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(Icons.delete_outlined, color: Colors.white),
+                  child: Icon(
+                    Icons.delete_outlined,
+                    color: colorScheme.onError,
+                  ),
                 ),
                 confirmDismiss: (direction) async {
                   return await showDialog(
@@ -248,11 +265,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text('No'),
+                          child: const Text('Cancel'),
                         ),
                         TextButton(
                           onPressed: () => Navigator.of(ctx).pop(true),
-                          child: const Text('Yes'),
+                          child: Text(
+                            'Delete',
+                            style: TextStyle(color: colorScheme.error),
+                          ),
                         ),
                       ],
                     ),
@@ -261,50 +281,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 onDismissed: (direction) {
                   provider.deleteTransaction(tx.id!);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Transaction deleted')),
+                    SnackBar(
+                      content: const Text('Transaction deleted'),
+                      action: SnackBarAction(
+                        label: 'Undo',
+                        onPressed: () {},
+                      ),
+                    ),
                   );
                 },
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Color(
-                      category.colorValue,
-                    ).withOpacity(0.2),
-                    child: Icon(
-                      IconData(
-                        category.iconCode,
-                        fontFamily: category.fontFamily ?? 'MaterialIcons',
-                        fontPackage: category.fontPackage,
-                      ),
-                      color: Color(category.colorValue),
-                    ),
-                  ),
-                  title: Text(tx.title),
-                  subtitle: Text(DateFormat.yMMMd().format(tx.date)),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        formatter.format(tx.amount),
-                        style: TextStyle(
-                          color: tx.type == CategoryType.income
-                              ? colorScheme.tertiary
-                              : tx.type == CategoryType.expense
-                              ? colorScheme.error
-                              : colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (tx.originalAmount != null)
-                        Text(
-                          '${tx.originalAmount!.toStringAsFixed(2)} ${tx.originalCurrency}',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey,
-                          ),
-                        ),
-                    ],
-                  ),
+                child: GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -312,6 +298,128 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       ),
                     );
                   },
+                  child: Card(
+                    elevation: 0,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: colorScheme.outlineVariant.withOpacity(0.5),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 12.0,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Color(category.colorValue)
+                                  .withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              IconData(
+                                category.iconCode,
+                                fontFamily: category.fontFamily ??
+                                    'MaterialIcons',
+                                fontPackage: category.fontPackage,
+                              ),
+                              color: Color(category.colorValue),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tx.title,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      category.name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color:
+                                                colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '•',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      DateFormat.yMMMd().format(tx.date),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color:
+                                                colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                formatter.format(tx.amount),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: tx.type == CategoryType.income
+                                          ? colorScheme.tertiary
+                                          : tx.type == CategoryType.expense
+                                          ? colorScheme.error
+                                          : colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              if (tx.originalAmount != null)
+                                Text(
+                                  '${tx.originalAmount!.toStringAsFixed(2)} ${tx.originalCurrency}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               );
             },
