@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/account_provider.dart';
 import '../providers/currency_provider.dart';
 import '../models/account.dart';
@@ -11,6 +12,10 @@ class AccountSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final currency = Provider.of<CurrencyProvider>(context).currency;
     final currencySymbol = _getCurrencySymbol(currency);
+    final formatter = NumberFormat.currency(
+      symbol: currencySymbol,
+      decimalDigits: 2,
+    );
 
     return Consumer<AccountProvider>(
       builder: (context, provider, child) {
@@ -59,7 +64,7 @@ class AccountSummary extends StatelessWidget {
                           ],
                         ),
                         Text(
-                          '$currencySymbol${account.balance.toStringAsFixed(2)}',
+                          formatter.format(account.balance),
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(
                                 color: _getBalanceColor(account.balance),

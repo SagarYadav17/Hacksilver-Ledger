@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/currency_provider.dart';
 import '../models/category.dart';
 import 'add_transaction_screen.dart';
 import '../widgets/custom_drawer.dart';
@@ -18,80 +19,105 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   CategoryType? _filterType;
   DateTimeRange? _dateRange;
 
-  void _showFilterDialog() {
-    showDialog(
+  void _showFilterSheet() {
+    CategoryType? tempType = _filterType;
+    DateTimeRange? tempRange = _dateRange;
+
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Filter Transactions'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<CategoryType>(
-                decoration: const InputDecoration(labelText: 'Type'),
-                initialValue: _filterType,
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('All')),
-                  DropdownMenuItem(
-                    value: CategoryType.income,
-                    child: Text('Income'),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                8,
+                16,
+                24 + MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Filter transactions',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  DropdownMenuItem(
-                    value: CategoryType.expense,
-                    child: Text('Expense'),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<CategoryType?>(
+                    decoration: const InputDecoration(labelText: 'Type'),
+                    value: tempType,
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('All')),
+                      DropdownMenuItem(
+                        value: CategoryType.income,
+                        child: Text('Income'),
+                      ),
+                      DropdownMenuItem(
+                        value: CategoryType.expense,
+                        child: Text('Expense'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      setModalState(() {
+                        tempType = val;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final picked = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                        initialDateRange: tempRange,
+                      );
+                      if (picked != null) {
+                        setModalState(() {
+                          tempRange = picked;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.date_range_outlined),
+                    label: Text(
+                      tempRange == null
+                          ? 'Select date range'
+                          : '${DateFormat.yMd().format(tempRange!.start)} - ${DateFormat.yMd().format(tempRange!.end)}',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _filterType = null;
+                            _dateRange = null;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Clear'),
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            _filterType = tempType;
+                            _dateRange = tempRange;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Apply'),
+                      ),
+                    ],
                   ),
                 ],
-                onChanged: (val) {
-                  setState(() {
-                    _filterType = val;
-                  });
-                  Navigator.of(context).pop();
-                  _showFilterDialog(); // Re-open to show state change or just close.
-                  // Better UX: update state inside dialog or use StatefulBuilder.
-                  // For simplicity, just update parent state and let user see result.
-                },
               ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () async {
-                  final picked = await showDateRangePicker(
-                    context: context,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now(),
-                    initialDateRange: _dateRange,
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _dateRange = picked;
-                    });
-                    if (mounted) Navigator.of(context).pop();
-                  }
-                },
-                child: Text(
-                  _dateRange == null
-                      ? 'Select Date Range'
-                      : '${DateFormat.yMd().format(_dateRange!.start)} - ${DateFormat.yMd().format(_dateRange!.end)}',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _filterType = null;
-                    _dateRange = null;
-                  });
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Clear Filters'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -99,13 +125,21 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final currency = Provider.of<CurrencyProvider>(context).currency;
+    final currencySymbol = _getCurrencySymbol(currency);
+    final formatter = NumberFormat.currency(
+      symbol: currencySymbol,
+      decimalDigits: 2,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transactions'),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list_alt),
-            onPressed: _showFilterDialog,
+            onPressed: _showFilterSheet,
           ),
         ],
       ),
@@ -133,11 +167,50 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           }
 
           if (txs.isEmpty) {
-            return const Center(child: Text('No transactions found'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.search_off_outlined,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No transactions found',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Try adjusting filters or add a new transaction.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/add-transaction');
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add transaction'),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.only(bottom: 96),
             itemCount: txs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final tx = txs[index];
               final category =
@@ -212,13 +285,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        tx.amount.toStringAsFixed(2),
+                        formatter.format(tx.amount),
                         style: TextStyle(
                           color: tx.type == CategoryType.income
-                              ? Colors.green
+                              ? colorScheme.tertiary
                               : tx.type == CategoryType.expense
-                              ? Colors.red
-                              : Colors.blue,
+                              ? colorScheme.error
+                              : colorScheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -246,5 +319,20 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         },
       ),
     );
+  }
+
+  String _getCurrencySymbol(String currencyCode) {
+    switch (currencyCode) {
+      case 'INR':
+        return '₹';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      default:
+        return currencyCode;
+    }
   }
 }
