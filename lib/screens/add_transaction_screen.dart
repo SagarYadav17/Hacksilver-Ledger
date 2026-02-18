@@ -206,9 +206,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             children: [
               // Custom Segmented Control for Transaction Type
               Container(
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -216,55 +216,183 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     _buildTypeSegment(
                       'Expense',
                       CategoryType.expense,
-                      Colors.red,
+                      Theme.of(context).colorScheme.error,
                     ),
                     _buildTypeSegment(
                       'Income',
                       CategoryType.income,
-                      Colors.green,
+                      Theme.of(context).colorScheme.tertiary,
                     ),
                     _buildTypeSegment(
                       'Transfer',
                       CategoryType.transfer,
-                      Colors.blue,
+                      Theme.of(context).colorScheme.primary,
                     ),
                   ],
                 ),
               ),
-              TextFormField(
-                initialValue: _title,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (val) {
-                  if (val == null || val.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
-                onSaved: (val) {
-                  _title = val!;
-                },
+              // Basic Details Card
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    width: 0.5,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Transaction Details',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        initialValue: _title,
+                        decoration: const InputDecoration(
+                          labelText: 'Title',
+                          prefixIcon: Icon(Icons.edit_outlined),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.isEmpty) {
+                            return 'Please enter a title';
+                          }
+                          return null;
+                        },
+                        onSaved: (val) {
+                          _title = val!;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        initialValue: _amount > 0 ? _amount.toString() : null,
+                        decoration: InputDecoration(
+                          labelText: _isForeignCurrency
+                              ? 'Amount in Default Currency (Equivalent)'
+                              : 'Amount',
+                          prefixIcon: const Icon(Icons.currency_exchange_outlined),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (val) {
+                          if (val == null || double.tryParse(val) == null) {
+                            return 'Please enter a valid amount';
+                          }
+                          return null;
+                        },
+                        onSaved: (val) {
+                          _amount = double.parse(val!);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Date',
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
+                                const SizedBox(height: 8),
+                                InkWell(
+                                  onTap: _presentDatePicker,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outlineVariant,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today_outlined,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          DateFormat.yMd().format(_selectedDate),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
+              const SizedBox(height: 16),
               Consumer<AccountProvider>(
                 builder: (context, accProvider, child) {
                   if (_type == CategoryType.transfer) {
                     return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      elevation: 2,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: const BorderSide(color: Colors.blueAccent),
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          width: 1.5,
+                        ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Transfer Details',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.compare_arrows_rounded,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    size: 18,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Transfer Between Accounts',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<int>(
@@ -273,7 +401,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 prefixIcon: Icon(
                                   Icons.account_balance_wallet_outlined,
                                 ),
-                                border: OutlineInputBorder(),
                               ),
                               initialValue: _selectedAccountId,
                               validator: (val) {
@@ -286,7 +413,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 return DropdownMenuItem<int>(
                                   value: acc.id,
                                   child: Text(
-                                    '${acc.name} (₹${acc.balance.toStringAsFixed(2)})',
+                                    '${acc.name} - ${_getCurrencySymbol('INR')}${acc.balance.toStringAsFixed(2)}',
                                   ),
                                 );
                               }).toList(),
@@ -297,18 +424,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               },
                             ),
                             const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              padding: EdgeInsets.symmetric(vertical: 12.0),
                               child: Icon(
                                 Icons.arrow_downward_rounded,
                                 color: Colors.blue,
-                                size: 32,
+                                size: 28,
                               ),
                             ),
                             DropdownButtonFormField<int>(
                               decoration: const InputDecoration(
                                 labelText: 'To Account',
                                 prefixIcon: Icon(Icons.savings_outlined),
-                                border: OutlineInputBorder(),
                               ),
                               initialValue: _transferAccountId,
                               validator: (val) {
@@ -324,7 +450,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 return DropdownMenuItem<int>(
                                   value: acc.id,
                                   child: Text(
-                                    '${acc.name} (₹${acc.balance.toStringAsFixed(2)})',
+                                    '${acc.name} - ${_getCurrencySymbol('INR')}${acc.balance.toStringAsFixed(2)}',
                                   ),
                                 );
                               }).toList(),
@@ -339,153 +465,242 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       ),
                     );
                   } else {
-                    return DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(
-                        labelText: 'Account',
-                        prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                    return Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          width: 0.5,
+                        ),
                       ),
-                      initialValue: _selectedAccountId,
-                      validator: (val) {
-                        if (val == null) {
-                          return 'Please select an account';
-                        }
-                        return null;
-                      },
-                      items: accProvider.accounts.map((acc) {
-                        return DropdownMenuItem<int>(
-                          value: acc.id,
-                          child: Text(
-                            '${acc.name} (₹${acc.balance.toStringAsFixed(2)})',
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: DropdownButtonFormField<int>(
+                          decoration: const InputDecoration(
+                            labelText: 'Account',
+                            prefixIcon:
+                                Icon(Icons.account_balance_wallet_outlined),
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedAccountId = val;
-                        });
-                      },
+                          initialValue: _selectedAccountId,
+                          validator: (val) {
+                            if (val == null) {
+                              return 'Please select an account';
+                            }
+                            return null;
+                          },
+                          items: accProvider.accounts.map((acc) {
+                            return DropdownMenuItem<int>(
+                              value: acc.id,
+                              child: Text(
+                                '${acc.name} - ${_getCurrencySymbol('INR')}${acc.balance.toStringAsFixed(2)}',
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedAccountId = val;
+                            });
+                          },
+                        ),
+                      ),
                     );
                   }
                 },
               ),
-              SwitchListTile(
-                title: const Text('Foreign Currency?'),
-                value: _isForeignCurrency,
-                onChanged: (val) {
-                  setState(() {
-                    _isForeignCurrency = val;
-                  });
-                },
-              ),
-              if (_isForeignCurrency) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: TextFormField(
-                        initialValue: _originalAmount?.toString(),
-                        decoration: const InputDecoration(
-                          labelText: 'Amount (Foreign)',
-                        ),
-                        keyboardType: TextInputType.number,
-                        validator: (val) {
-                          if (_isForeignCurrency &&
-                              (val == null || double.tryParse(val) == null)) {
-                            return 'Enter valid amount';
-                          }
-                          return null;
-                        },
-                        onSaved: (val) {
-                          if (_isForeignCurrency) {
-                            _originalAmount = double.parse(val!);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 1,
-                      child: DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Currency',
-                        ),
-                        initialValue: _originalCurrency,
-                        items: ['USD', 'EUR', 'GBP', 'INR']
-                            .map(
-                              (c) => DropdownMenuItem(value: c, child: Text(c)),
-                            )
-                            .toList(),
-                        onChanged: (val) =>
-                            setState(() => _originalCurrency = val!),
-                        onSaved: (val) {
-                          if (_isForeignCurrency) _originalCurrency = val!;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              TextFormField(
-                initialValue: _amount > 0
-                    ? _amount.toString()
-                    : null, // Prevent 0.0 showing on new add
-                decoration: InputDecoration(
-                  labelText: _isForeignCurrency
-                      ? 'Amount in Default Currency (Equivalent)'
-                      : 'Amount',
-                ),
-                keyboardType: TextInputType.number,
-                validator: (val) {
-                  if (val == null || double.tryParse(val) == null) {
-                    return 'Please enter a valid amount';
-                  }
-                  return null;
-                },
-                onSaved: (val) {
-                  _amount = double.parse(val!);
-                },
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Date: ${DateFormat.yMd().format(_selectedDate)}',
-                    ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    width: 0.5,
                   ),
-                  TextButton(
-                    onPressed: _presentDatePicker,
-                    child: const Text('Choose Date'),
-                  ),
-                ],
-              ),
-              DropdownButtonFormField<Category>(
-                decoration: const InputDecoration(labelText: 'Category *'),
-                initialValue: _selectedCategory,
-                items: categories.map((cat) {
-                  return DropdownMenuItem(
-                    value: cat,
-                    child: Row(
-                      children: [
-                        Icon(
-                          IconData(
-                            cat.iconCode,
-                            fontFamily: cat.fontFamily ?? 'MaterialIcons',
-                            fontPackage: cat.fontPackage,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Currency Details',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
+                          FilterChip(
+                            label: const Text('Foreign Currency?'),
+                            selected: _isForeignCurrency,
+                            onSelected: (val) {
+                              setState(() {
+                                _isForeignCurrency = val;
+                              });
+                            },
+                            showCheckmark: false,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (_isForeignCurrency) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                initialValue:
+                                    _originalAmount?.toString(),
+                                decoration: const InputDecoration(
+                                  labelText: 'Amount (Foreign)',
+                                  prefixIcon:
+                                      Icon(Icons.currency_exchange_outlined),
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (val) {
+                                  if (_isForeignCurrency &&
+                                      (val == null ||
+                                          double.tryParse(val) == null)) {
+                                    return 'Enter valid amount';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (val) {
+                                  if (_isForeignCurrency) {
+                                    _originalAmount =
+                                        double.parse(val!);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 1,
+                              child:
+                                  DropdownButtonFormField<String>(
+                                decoration: const InputDecoration(
+                                  labelText: 'Currency',
+                                ),
+                                initialValue: _originalCurrency,
+                                items: [
+                                  'USD',
+                                  'EUR',
+                                  'GBP',
+                                  'INR'
+                                ]
+                                    .map(
+                                      (c) => DropdownMenuItem(
+                                        value: c,
+                                        child: Text(c),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (val) => setState(
+                                  () =>
+                                      _originalCurrency = val!,
+                                ),
+                                onSaved: (val) {
+                                  if (_isForeignCurrency) {
+                                    _originalCurrency = val!;
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(cat.name),
                       ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _selectedCategory = val;
-                  });
-                },
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
+              if (_type != CategoryType.transfer)
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Category',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<Category>(
+                          decoration: const InputDecoration(
+                            labelText: 'Select Category',
+                            prefixIcon:
+                                Icon(Icons.category_outlined),
+                          ),
+                          initialValue: _selectedCategory,
+                          items: categories.map((cat) {
+                            return DropdownMenuItem(
+                              value: cat,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Color(cat.colorValue)
+                                          .withOpacity(0.15),
+                                      borderRadius:
+                                          BorderRadius.circular(6),
+                                    ),
+                                    child: Icon(
+                                      IconData(
+                                        cat.iconCode,
+                                        fontFamily: cat.fontFamily ??
+                                            'MaterialIcons',
+                                        fontPackage: cat.fontPackage,
+                                      ),
+                                      size: 14,
+                                      color: Color(cat.colorValue),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(cat.name),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          validator: (val) {
+                            if (_type != CategoryType.transfer &&
+                                val == null) {
+                              return 'Please select a category';
+                            }
+                            return null;
+                          },
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedCategory = val;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (_type != CategoryType.transfer)
+                const SizedBox(height: 16),
               Consumer<LoanProvider>(
                 builder: (context, loanProvider, child) {
                   // Only taken/given relevant to txn type?
@@ -500,45 +715,92 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                   if (loans.isEmpty) return const SizedBox.shrink();
 
-                  return DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: 'Link to Loan (Optional)',
-                      helperText:
-                          'Select a loan if this transaction is related to one',
-                    ),
-                    initialValue: _selectedLoanId,
-                    items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('None'),
+                  return Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        width: 0.5,
                       ),
-                      ...loans.map((loan) {
-                        return DropdownMenuItem<int>(
-                          value: loan.id,
-                          child: Text(
-                            '${loan.title} (${loan.type == LoanType.taken ? 'Taken' : 'Given'})',
-                            overflow: TextOverflow.ellipsis,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Linked Loan (Optional)',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
-                        );
-                      }),
-                    ],
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedLoanId = val;
-                      });
-                    },
+                          const SizedBox(height: 8),
+                          Text(
+                            'Link this transaction to an open loan',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<int>(
+                            decoration: const InputDecoration(
+                              labelText: 'Select Loan',
+                              prefixIcon: Icon(Icons.credit_score_outlined),
+                            ),
+                            initialValue: _selectedLoanId,
+                            items: [
+                              const DropdownMenuItem<int>(
+                                value: null,
+                                child: Text('None'),
+                              ),
+                              ...loans.map((loan) {
+                                return DropdownMenuItem<int>(
+                                  value: loan.id,
+                                  child: Text(
+                                    '${loan.title} (${loan.type == LoanType.taken ? 'Taken' : 'Given'})',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }),
+                            ],
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedLoanId = val;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
+              const SizedBox(height: 24),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: _submitData,
                 child: Text(
                   widget.transaction != null
                       ? 'Update Transaction'
                       : 'Add Transaction',
+                  style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -546,7 +808,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildTypeSegment(String title, CategoryType type, Color color) {
+  Widget _buildTypeSegment(
+    String title,
+    CategoryType type,
+    Color color,
+  ) {
     bool isSelected = _type == type;
     return Expanded(
       child: GestureDetector(
@@ -554,30 +820,55 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           setState(() {
             _type = type;
             // Reset category if switching type (unless editing same txn)
-            if (_selectedCategory != null && _selectedCategory!.type != type) {
+            if (_selectedCategory != null &&
+                _selectedCategory!.type != type) {
               _selectedCategory = null;
             }
           });
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? color : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
+            border: !isSelected
+                ? Border.all(
+                    color: color.withOpacity(0.3),
+                    width: 1.5,
+                  )
+                : null,
           ),
           child: Center(
             child: Text(
               title,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black54,
+                color: isSelected
+                    ? Colors.white
+                    : color.withOpacity(0.7),
                 fontWeight: FontWeight.bold,
+                fontSize: 14,
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  String _getCurrencySymbol(String currencyCode) {
+    switch (currencyCode) {
+      case 'INR':
+        return '₹';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      default:
+        return currencyCode;
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
@@ -53,25 +54,57 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
       drawer: const CustomDrawer(currentRoute: '/'),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 96),
-        children: [
-          const SummaryCard(),
-          const AccountSummary(),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await Future.wait([
+            Provider.of<TransactionProvider>(
+              context,
+              listen: false,
+            ).fetchTransactions(),
+            Provider.of<AccountProvider>(
+              context,
+              listen: false,
+            ).fetchAccounts(),
+            Provider.of<LoanProvider>(context, listen: false).fetchLoans(),
+          ]);
+          return Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 96),
+          children: [
+            const SummaryCard(),
+            const AccountSummary(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Recent Transactions',
-                  style: Theme.of(context).textTheme.titleMedium,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Recent Transactions',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Your latest activity',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton(
+                TextButton.icon(
                   onPressed: () {
                     Navigator.of(context).pushNamed('/transactions');
                   },
-                  child: const Text('View all'),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: const Text('View all'),
                 ),
               ],
             ),
@@ -80,36 +113,49 @@ class DashboardScreen extends StatelessWidget {
             builder: (context, provider, child) {
               if (provider.transactions.isEmpty) {
                 return Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.receipt_long_outlined,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Icon(
+                          Icons.receipt_long_outlined,
+                          size: 56,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Start Tracking Your Money',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'No transactions yet',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Add your first transaction to see it here.',
+                        'Add your first transaction to begin your finance journey',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 28),
                       FilledButton.icon(
                         onPressed: () {
+                          HapticFeedback.lightImpact();
                           Navigator.of(context).pushNamed('/add-transaction');
                         },
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add transaction'),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Create First Transaction'),
                       ),
                     ],
                   ),
@@ -121,7 +167,7 @@ class DashboardScreen extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 4),
+                separatorBuilder: (_, _) => const SizedBox(height: 4),
                 itemBuilder: (context, index) {
                   final tx = items[index];
                   final category =
@@ -143,12 +189,15 @@ class DashboardScreen extends StatelessWidget {
                     key: ValueKey(tx.id),
                     direction: DismissDirection.endToStart,
                     background: Container(
-                      color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: colorScheme.error,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 20),
-                      child: const Icon(
+                      child: Icon(
                         Icons.delete_outlined,
-                        color: Colors.white,
+                        color: colorScheme.onError,
                       ),
                     ),
                     confirmDismiss: (direction) async {
@@ -162,11 +211,14 @@ class DashboardScreen extends StatelessWidget {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('No'),
+                              child: const Text('Cancel'),
                             ),
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(true),
-                              child: const Text('Yes'),
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(color: colorScheme.error),
+                              ),
                             ),
                           ],
                         ),
@@ -175,36 +227,12 @@ class DashboardScreen extends StatelessWidget {
                     onDismissed: (direction) {
                       provider.deleteTransaction(tx.id!);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Transaction deleted')),
+                        SnackBar(
+                          content: const Text('Transaction deleted'),
+                        ),
                       );
                     },
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Color(
-                          category.colorValue,
-                        ).withOpacity(0.2),
-                        child: Icon(
-                          IconData(
-                            category.iconCode,
-                            fontFamily: category.fontFamily ?? 'MaterialIcons',
-                            fontPackage: category.fontPackage,
-                          ),
-                          color: Color(category.colorValue),
-                        ),
-                      ),
-                      title: Text(tx.title),
-                      subtitle: Text(DateFormat.yMMMd().format(tx.date)),
-                      trailing: Text(
-                        formatter.format(tx.amount),
-                        style: TextStyle(
-                          color: tx.type == CategoryType.income
-                              ? colorScheme.tertiary
-                              : tx.type == CategoryType.expense
-                              ? colorScheme.error
-                              : colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    child: GestureDetector(
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -213,19 +241,120 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      child: Card(
+                        elevation: 0,
+                        color: colorScheme.surface,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 12.0,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Color(category.colorValue)
+                                      .withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  IconData(
+                                    category.iconCode,
+                                    fontFamily: category.fontFamily ??
+                                        'MaterialIcons',
+                                    fontPackage: category.fontPackage,
+                                  ),
+                                  color: Color(category.colorValue),
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tx.title,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      category.name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    formatter.format(tx.amount),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
+                                          color: tx.type ==
+                                                  CategoryType.income
+                                              ? colorScheme.tertiary
+                                              : tx.type ==
+                                                      CategoryType.expense
+                                                  ? colorScheme.error
+                                                  : colorScheme.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    DateFormat.yMMMd().format(tx.date),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 },
               );
             },
           ),
-        ],
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
+          HapticFeedback.mediumImpact();
           Navigator.of(context).pushNamed('/add-transaction');
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded, size: 24),
+        label: const Text('Add Transaction'),
+        elevation: 8,
       ),
     );
   }
