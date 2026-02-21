@@ -48,7 +48,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<CategoryType?>(
                     decoration: const InputDecoration(labelText: 'Type'),
-                    value: tempType,
+                    initialValue: tempType,
                     items: const [
                       DropdownMenuItem(value: null, child: Text('All')),
                       DropdownMenuItem(
@@ -210,7 +210,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           return ListView.separated(
             padding: const EdgeInsets.only(bottom: 96),
             itemCount: txs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 4),
+            separatorBuilder: (_, _) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final tx = txs[index];
               final category =

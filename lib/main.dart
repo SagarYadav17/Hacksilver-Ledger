@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
         foregroundColor: colorScheme.onSurface,
         surfaceTintColor: Colors.transparent,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: colorScheme.surface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -88,7 +88,7 @@ class MyApp extends StatelessWidget {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(
           brightness == Brightness.light ? 0.5 : 0.2,
         ),
         border: OutlineInputBorder(
