@@ -105,7 +105,10 @@ class TransactionProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final transaction = _transactions.firstWhere((tx) => tx.id == id);
+      final transaction = _transactions.firstWhere(
+        (tx) => tx.id == id,
+        orElse: () => throw Exception('Transaction with id $id not found'),
+      );
 
       // Revert account balances
       if (transaction.type == CategoryType.transfer) {
