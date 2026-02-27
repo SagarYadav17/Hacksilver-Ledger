@@ -4,16 +4,33 @@ import '../models/category.dart';
 import '../models/account.dart';
 import '../models/loan.dart';
 import '../services/database_service.dart';
+import '../constants/app_constants.dart';
 
 class TransactionProvider with ChangeNotifier {
   List<Transaction> _transactions = [];
+  bool _isLoading = false;
+  String? _error;
   final DatabaseService _dbService = DatabaseService();
 
   List<Transaction> get transactions => _transactions;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> fetchTransactions() async {
-    _transactions = await _dbService.getTransactions();
+    _isLoading = true;
+    _error = null;
     notifyListeners();
+
+    try {
+      _transactions = await _dbService.getTransactions();
+      _error = null;
+    } catch (e) {
+      _error = AppConstants.errorLoadingTransactions;
+      debugPrint('Error fetching transactions: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   double get totalIncome => _transactions
@@ -27,165 +44,206 @@ class TransactionProvider with ChangeNotifier {
   double get balance => totalIncome - totalExpense;
 
   Future<void> addTransaction(Transaction transaction) async {
-    await _dbService.insertTransaction(transaction);
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
 
-    // Update account balances
-    if (transaction.type == CategoryType.transfer) {
-      if (transaction.accountId != null) {
-        await _updateAccountBalance(
-          transaction.accountId!,
-          -transaction.amount,
-        );
-      }
-      if (transaction.transferAccountId != null) {
-        await _updateAccountBalance(
-          transaction.transferAccountId!,
-          transaction.amount,
-        );
-      }
-    } else {
-      // Income or Expense
-      if (transaction.accountId != null) {
-        if (transaction.type == CategoryType.income) {
-          await _updateAccountBalance(
-            transaction.accountId!,
-            transaction.amount,
-          );
-        } else {
+      await _dbService.insertTransaction(transaction);
+
+      // Update account balances
+      if (transaction.type == CategoryType.transfer) {
+        if (transaction.accountId != null) {
           await _updateAccountBalance(
             transaction.accountId!,
             -transaction.amount,
           );
         }
+        if (transaction.transferAccountId != null) {
+          await _updateAccountBalance(
+            transaction.transferAccountId!,
+            transaction.amount,
+          );
+        }
+      } else {
+        // Income or Expense
+        if (transaction.accountId != null) {
+          if (transaction.type == CategoryType.income) {
+            await _updateAccountBalance(
+              transaction.accountId!,
+              transaction.amount,
+            );
+          } else {
+            await _updateAccountBalance(
+              transaction.accountId!,
+              -transaction.amount,
+            );
+          }
+        }
       }
-    }
 
-    // Update loan balance if transaction is linked
-    if (transaction.loanId != null) {
-      await _updateLoanBalance(transaction.loanId!, transaction.amount);
-    }
+      // Update loan balance if transaction is linked
+      if (transaction.loanId != null) {
+        await _updateLoanBalance(transaction.loanId!, transaction.amount);
+      }
 
-    await fetchTransactions();
+      await fetchTransactions();
+    } catch (e) {
+      _error = AppConstants.errorAddingTransaction;
+      debugPrint('Error adding transaction: $e');
+      notifyListeners();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> deleteTransaction(int id) async {
-    final transaction = _transactions.firstWhere((tx) => tx.id == id);
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
 
-    // Revert account balances
-    if (transaction.type == CategoryType.transfer) {
-      if (transaction.accountId != null) {
-        await _updateAccountBalance(transaction.accountId!, transaction.amount);
-      }
-      if (transaction.transferAccountId != null) {
-        await _updateAccountBalance(
-          transaction.transferAccountId!,
-          -transaction.amount,
-        );
-      }
-    } else {
-      // Income or Expense
-      if (transaction.accountId != null) {
-        if (transaction.type == CategoryType.income) {
+      final transaction = _transactions.firstWhere((tx) => tx.id == id);
+
+      // Revert account balances
+      if (transaction.type == CategoryType.transfer) {
+        if (transaction.accountId != null) {
+          await _updateAccountBalance(transaction.accountId!, transaction.amount);
+        }
+        if (transaction.transferAccountId != null) {
           await _updateAccountBalance(
-            transaction.accountId!,
+            transaction.transferAccountId!,
             -transaction.amount,
           );
-        } else {
-          await _updateAccountBalance(
-            transaction.accountId!,
-            transaction.amount,
-          );
+        }
+      } else {
+        // Income or Expense
+        if (transaction.accountId != null) {
+          if (transaction.type == CategoryType.income) {
+            await _updateAccountBalance(
+              transaction.accountId!,
+              -transaction.amount,
+            );
+          } else {
+            await _updateAccountBalance(
+              transaction.accountId!,
+              transaction.amount,
+            );
+          }
         }
       }
-    }
 
-    // Revert loan balance if transaction is linked
-    if (transaction.loanId != null) {
-      await _updateLoanBalance(transaction.loanId!, -transaction.amount);
-    }
+      // Revert loan balance if transaction is linked
+      if (transaction.loanId != null) {
+        await _updateLoanBalance(transaction.loanId!, -transaction.amount);
+      }
 
-    await _dbService.deleteTransaction(id);
-    await fetchTransactions();
+      await _dbService.deleteTransaction(id);
+      await fetchTransactions();
+    } catch (e) {
+      _error = AppConstants.errorDeletingTransaction;
+      debugPrint('Error deleting transaction: $e');
+      notifyListeners();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> updateTransaction(Transaction transaction) async {
-    // 1. Revert old transaction effect
-    final oldTransaction = _transactions.firstWhere(
-      (tx) => tx.id == transaction.id,
-    );
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
 
-    // 1. Revert old transaction effect
-    if (oldTransaction.type == CategoryType.transfer) {
-      if (oldTransaction.accountId != null) {
-        await _updateAccountBalance(
-          oldTransaction.accountId!,
-          oldTransaction.amount,
-        );
-      }
-      if (oldTransaction.transferAccountId != null) {
-        await _updateAccountBalance(
-          oldTransaction.transferAccountId!,
-          -oldTransaction.amount,
-        );
-      }
-    } else {
-      if (oldTransaction.accountId != null) {
-        if (oldTransaction.type == CategoryType.income) {
-          await _updateAccountBalance(
-            oldTransaction.accountId!,
-            -oldTransaction.amount,
-          );
-        } else {
+      // 1. Revert old transaction effect
+      final oldTransaction = _transactions.firstWhere(
+        (tx) => tx.id == transaction.id,
+      );
+
+      if (oldTransaction.type == CategoryType.transfer) {
+        if (oldTransaction.accountId != null) {
           await _updateAccountBalance(
             oldTransaction.accountId!,
             oldTransaction.amount,
           );
         }
-      }
-    }
-
-    // 2. Update transaction in DB
-    await _dbService.updateTransaction(transaction);
-
-    // 3. Apply new transaction effect
-    if (transaction.type == CategoryType.transfer) {
-      if (transaction.accountId != null) {
-        await _updateAccountBalance(
-          transaction.accountId!,
-          -transaction.amount,
-        );
-      }
-      if (transaction.transferAccountId != null) {
-        await _updateAccountBalance(
-          transaction.transferAccountId!,
-          transaction.amount,
-        );
-      }
-    } else {
-      if (transaction.accountId != null) {
-        if (transaction.type == CategoryType.income) {
+        if (oldTransaction.transferAccountId != null) {
           await _updateAccountBalance(
-            transaction.accountId!,
-            transaction.amount,
+            oldTransaction.transferAccountId!,
+            -oldTransaction.amount,
           );
-        } else {
+        }
+      } else {
+        if (oldTransaction.accountId != null) {
+          if (oldTransaction.type == CategoryType.income) {
+            await _updateAccountBalance(
+              oldTransaction.accountId!,
+              -oldTransaction.amount,
+            );
+          } else {
+            await _updateAccountBalance(
+              oldTransaction.accountId!,
+              oldTransaction.amount,
+            );
+          }
+        }
+      }
+
+      // 2. Update transaction in DB
+      await _dbService.updateTransaction(transaction);
+
+      // 3. Apply new transaction effect
+      if (transaction.type == CategoryType.transfer) {
+        if (transaction.accountId != null) {
           await _updateAccountBalance(
             transaction.accountId!,
             -transaction.amount,
           );
         }
+        if (transaction.transferAccountId != null) {
+          await _updateAccountBalance(
+            transaction.transferAccountId!,
+            transaction.amount,
+          );
+        }
+      } else {
+        if (transaction.accountId != null) {
+          if (transaction.type == CategoryType.income) {
+            await _updateAccountBalance(
+              transaction.accountId!,
+              transaction.amount,
+            );
+          } else {
+            await _updateAccountBalance(
+              transaction.accountId!,
+              -transaction.amount,
+            );
+          }
+        }
       }
-    }
 
-    // 4. Update loan balances
-    if (oldTransaction.loanId != null) {
-      await _updateLoanBalance(oldTransaction.loanId!, -oldTransaction.amount);
-    }
-    if (transaction.loanId != null) {
-      await _updateLoanBalance(transaction.loanId!, transaction.amount);
-    }
+      // 4. Update loan balances
+      if (oldTransaction.loanId != null) {
+        await _updateLoanBalance(oldTransaction.loanId!, -oldTransaction.amount);
+      }
+      if (transaction.loanId != null) {
+        await _updateLoanBalance(transaction.loanId!, transaction.amount);
+      }
 
-    await fetchTransactions();
+      await fetchTransactions();
+    } catch (e) {
+      _error = AppConstants.errorUpdatingTransaction;
+      debugPrint('Error updating transaction: $e');
+      notifyListeners();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> _updateLoanBalance(int loanId, double delta) async {

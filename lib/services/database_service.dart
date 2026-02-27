@@ -6,6 +6,7 @@ import '../models/transaction.dart'
 import '../models/account.dart';
 import '../models/recurring_transaction.dart';
 import '../models/loan.dart';
+import '../constants/db_constants.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -24,150 +25,155 @@ class DatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'hacksilver_ledger.db');
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+    String path = join(await getDatabasesPath(), DbConstants.databaseName);
+    return await openDatabase(
+      path,
+      version: DbConstants.databaseVersion,
+      onCreate: _onCreate,
+    );
   }
 
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE categories(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        iconCode INTEGER,
-        fontFamily TEXT,
-        fontPackage TEXT,
-        colorValue INTEGER,
-        type INTEGER,
-        isCustom INTEGER
+      CREATE TABLE ${DbConstants.tableCategories}(
+        ${DbConstants.columnId} INTEGER PRIMARY KEY AUTOINCREMENT,
+        ${DbConstants.columnName} TEXT,
+        ${DbConstants.columnCategoryIconCode} INTEGER,
+        ${DbConstants.columnCategoryFontFamily} TEXT,
+        ${DbConstants.columnCategoryFontPackage} TEXT,
+        ${DbConstants.columnCategoryColorValue} INTEGER,
+        ${DbConstants.columnCategoryType} INTEGER,
+        ${DbConstants.columnCategoryIsCustom} INTEGER
       )
     ''');
 
     await db.execute('''
-      CREATE TABLE accounts(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
+      CREATE TABLE ${DbConstants.tableAccounts}(
+        ${DbConstants.columnId} INTEGER PRIMARY KEY AUTOINCREMENT,
+        ${DbConstants.columnName} TEXT,
         type INTEGER,
-        balance REAL
+        ${DbConstants.columnAccountBalance} REAL
       )
     ''');
 
     await db.execute('''
-      CREATE TABLE transactions(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT,
-        amount REAL,
-        date TEXT,
-        type INTEGER,
-        categoryId INTEGER,
-        accountId INTEGER,
-        notes TEXT,
-        originalAmount REAL,
-        originalCurrency TEXT,
-        loanId INTEGER,
-        transferAccountId INTEGER,
-        FOREIGN KEY(categoryId) REFERENCES categories(id),
-        FOREIGN KEY(accountId) REFERENCES accounts(id)
+      CREATE TABLE ${DbConstants.tableTransactions}(
+        ${DbConstants.columnId} INTEGER PRIMARY KEY AUTOINCREMENT,
+        ${DbConstants.columnTransactionTitle} TEXT,
+        ${DbConstants.columnTransactionAmount} REAL,
+        ${DbConstants.columnDate} TEXT,
+        ${DbConstants.columnType} INTEGER,
+        ${DbConstants.columnTransactionCategoryId} INTEGER,
+        ${DbConstants.columnTransactionAccountId} INTEGER,
+        ${DbConstants.columnTransactionNotes} TEXT,
+        ${DbConstants.columnTransactionOriginalAmount} REAL,
+        ${DbConstants.columnTransactionOriginalCurrency} TEXT,
+        ${DbConstants.columnTransactionLoanId} INTEGER,
+        ${DbConstants.columnTransactionTransferAccountId} INTEGER,
+        FOREIGN KEY(${DbConstants.columnTransactionCategoryId}) REFERENCES ${DbConstants.tableCategories}(${DbConstants.columnId}),
+        FOREIGN KEY(${DbConstants.columnTransactionAccountId}) REFERENCES ${DbConstants.tableAccounts}(${DbConstants.columnId})
       )
     ''');
 
     await db.execute('''
-      CREATE TABLE recurring_transactions(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT,
-        amount REAL,
-        type INTEGER,
-        categoryId INTEGER,
-        accountId INTEGER,
-        frequency INTEGER,
+      CREATE TABLE ${DbConstants.tableRecurringTransactions}(
+        ${DbConstants.columnId} INTEGER PRIMARY KEY AUTOINCREMENT,
+        ${DbConstants.columnRecurringTransactionTitle} TEXT,
+        ${DbConstants.columnRecurringTransactionAmount} REAL,
+        ${DbConstants.columnType} INTEGER,
+        ${DbConstants.columnRecurringTransactionCategoryId} INTEGER,
+        ${DbConstants.columnRecurringTransactionAccountId} INTEGER,
+        ${DbConstants.columnRecurringTransactionFrequency} INTEGER,
         startDate TEXT,
         nextDueDate TEXT,
-        isActive INTEGER,
-        notes TEXT,
-        FOREIGN KEY(categoryId) REFERENCES categories(id)
+        ${DbConstants.columnRecurringTransactionIsActive} INTEGER,
+        ${DbConstants.columnRecurringTransactionNotes} TEXT,
+        FOREIGN KEY(${DbConstants.columnRecurringTransactionCategoryId}) REFERENCES ${DbConstants.tableCategories}(${DbConstants.columnId})
       )
     ''');
 
     await db.execute('''
-      CREATE TABLE loans(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+      CREATE TABLE ${DbConstants.tableLoans}(
+        ${DbConstants.columnId} INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
         amount REAL,
-        interestRate REAL,
+        ${DbConstants.columnLoanInterestRate} REAL,
         tenureMonths INTEGER,
-        type INTEGER,
-        startDate TEXT,
+        ${DbConstants.columnType} INTEGER,
+        ${DbConstants.columnLoanStartDate} TEXT,
         emiAmount REAL,
-        amountPaid REAL,
+        ${DbConstants.columnLoanAmountPaid} REAL,
         isClosed INTEGER,
         notes TEXT
       )
     ''');
   }
 
-  // Costants for tables
-  static const String tableCategories = 'categories';
-  static const String tableAccounts = 'accounts';
-  static const String tableTransactions = 'transactions';
-  static const String tableRecurringTransactions = 'recurring_transactions';
-
   // Category CRUD
   Future<int> insertCategory(Category category) async {
     final db = await database;
-    return await db.insert(tableCategories, category.toMap());
+    return await db.insert(DbConstants.tableCategories, category.toMap());
   }
 
   Future<List<Category>> getCategories() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(tableCategories);
+    final List<Map<String, dynamic>> maps =
+        await db.query(DbConstants.tableCategories);
     return List.generate(maps.length, (i) => Category.fromMap(maps[i]));
   }
 
   Future<int> deleteCategory(int id) async {
     final db = await database;
-    // Optional: Check if used in transactions before delete, or cascade.
-    // For now, simple delete.
-    return await db.delete(tableCategories, where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      DbConstants.tableCategories,
+      where: '${DbConstants.columnId} = ?',
+      whereArgs: [id],
+    );
   }
 
   // Account CRUD
   Future<int> insertAccount(Account account) async {
     final db = await database;
-    return await db.insert(tableAccounts, account.toMap());
+    return await db.insert(DbConstants.tableAccounts, account.toMap());
   }
 
   Future<List<Account>> getAccounts() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(tableAccounts);
+    final List<Map<String, dynamic>> maps =
+        await db.query(DbConstants.tableAccounts);
     return List.generate(maps.length, (i) => Account.fromMap(maps[i]));
   }
 
   Future<int> updateAccount(Account account) async {
     final db = await database;
     return await db.update(
-      tableAccounts,
+      DbConstants.tableAccounts,
       account.toMap(),
-      where: 'id = ?',
+      where: '${DbConstants.columnId} = ?',
       whereArgs: [account.id],
     );
   }
 
   Future<int> deleteAccount(int id) async {
     final db = await database;
-    return await db.delete(tableAccounts, where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      DbConstants.tableAccounts,
+      where: '${DbConstants.columnId} = ?',
+      whereArgs: [id],
+    );
   }
 
   // Transaction CRUD
   Future<int> insertTransaction(model.Transaction transaction) async {
     final db = await database;
-    return await db.insert(tableTransactions, transaction.toMap());
+    return await db.insert(DbConstants.tableTransactions, transaction.toMap());
   }
 
   Future<List<model.Transaction>> getTransactions() async {
     final db = await database;
-    // Order by date descending
     final List<Map<String, dynamic>> maps = await db.query(
-      tableTransactions,
-      orderBy: 'date DESC',
+      DbConstants.tableTransactions,
+      orderBy: '${DbConstants.columnDate} DESC',
     );
     return List.generate(
       maps.length,
@@ -178,16 +184,20 @@ class DatabaseService {
   Future<int> updateTransaction(model.Transaction transaction) async {
     final db = await database;
     return await db.update(
-      tableTransactions,
+      DbConstants.tableTransactions,
       transaction.toMap(),
-      where: 'id = ?',
+      where: '${DbConstants.columnId} = ?',
       whereArgs: [transaction.id],
     );
   }
 
   Future<int> deleteTransaction(int id) async {
     final db = await database;
-    return await db.delete(tableTransactions, where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      DbConstants.tableTransactions,
+      where: '${DbConstants.columnId} = ?',
+      whereArgs: [id],
+    );
   }
 
   // Recurring Transaction CRUD
@@ -195,7 +205,8 @@ class DatabaseService {
     RecurringTransaction transaction,
   ) async {
     final db = await database;
-    return await db.insert(tableRecurringTransactions, transaction.toMap());
+    return await db.insert(
+        DbConstants.tableRecurringTransactions, transaction.toMap());
   }
 
   Future<int> updateRecurringTransaction(
@@ -203,18 +214,17 @@ class DatabaseService {
   ) async {
     final db = await database;
     return await db.update(
-      tableRecurringTransactions,
+      DbConstants.tableRecurringTransactions,
       transaction.toMap(),
-      where: 'id = ?',
+      where: '${DbConstants.columnId} = ?',
       whereArgs: [transaction.id],
     );
   }
 
   Future<List<RecurringTransaction>> getRecurringTransactions() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableRecurringTransactions,
-    );
+    final List<Map<String, dynamic>> maps =
+        await db.query(DbConstants.tableRecurringTransactions);
     return List.generate(
       maps.length,
       (i) => RecurringTransaction.fromMap(maps[i]),
@@ -224,39 +234,43 @@ class DatabaseService {
   Future<int> deleteRecurringTransaction(int id) async {
     final db = await database;
     return await db.delete(
-      tableRecurringTransactions,
-      where: 'id = ?',
+      DbConstants.tableRecurringTransactions,
+      where: '${DbConstants.columnId} = ?',
       whereArgs: [id],
     );
   }
 
   // Loan CRUD
-  static const String tableLoans = 'loans';
 
   Future<int> insertLoan(Loan loan) async {
     final db = await database;
-    return await db.insert(tableLoans, loan.toMap());
+    return await db.insert(DbConstants.tableLoans, loan.toMap());
   }
 
   Future<List<Loan>> getLoans() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(tableLoans);
+    final List<Map<String, dynamic>> maps =
+        await db.query(DbConstants.tableLoans);
     return List.generate(maps.length, (i) => Loan.fromMap(maps[i]));
   }
 
   Future<int> updateLoan(Loan loan) async {
     final db = await database;
     return await db.update(
-      tableLoans,
+      DbConstants.tableLoans,
       loan.toMap(),
-      where: 'id = ?',
+      where: '${DbConstants.columnId} = ?',
       whereArgs: [loan.id],
     );
   }
 
   Future<int> deleteLoan(int id) async {
     final db = await database;
-    return await db.delete(tableLoans, where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      DbConstants.tableLoans,
+      where: '${DbConstants.columnId} = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> close() async {
