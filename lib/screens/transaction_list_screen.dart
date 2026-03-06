@@ -220,7 +220,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
             itemCount: txs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final tx = txs[index];
               final category =
