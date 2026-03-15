@@ -90,45 +90,52 @@ class SummaryCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Available Balance',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(
-                                color: colorScheme.onPrimaryContainer
-                                    .withOpacity(0.7),
-                                letterSpacing: 0.5,
-                              ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          formatter.format(accProvider.totalBalance),
-                          style: Theme.of(context)
-                              .textTheme
-                              .displayLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w900,
-                                color: colorScheme.onPrimaryContainer,
-                                letterSpacing: -1,
-                              ),
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Available Balance',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                  color: colorScheme.onPrimaryContainer
+                                      .withValues(alpha: 0.7),
+                                  letterSpacing: 0.5,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              formatter.format(accProvider.totalBalance),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .displayLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: colorScheme.onPrimaryContainer,
+                                    letterSpacing: -1,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 12),
                     Container(
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: colorScheme.onPrimaryContainer.withOpacity(0.08),
+                        color: colorScheme.onPrimaryContainer.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         Icons.wallet_outlined,
                         color: colorScheme.onPrimaryContainer
-                            .withOpacity(0.5),
+                            .withValues(alpha: 0.5),
                         size: 28,
                       ),
                     ),
@@ -138,7 +145,7 @@ class SummaryCard extends StatelessWidget {
                 // Divider
                 Container(
                   height: 1,
-                  color: colorScheme.onPrimaryContainer.withOpacity(0.1),
+                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.1),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -157,7 +164,7 @@ class SummaryCard extends StatelessWidget {
                     Container(
                       height: 60,
                       width: 1,
-                      color: colorScheme.onPrimaryContainer.withOpacity(0.12),
+                      color: colorScheme.onPrimaryContainer.withValues(alpha: 0.12),
                     ),
                     _buildStat(
                       context: context,
@@ -196,7 +203,7 @@ class SummaryCard extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: color, size: 20),
@@ -208,7 +215,7 @@ class SummaryCard extends StatelessWidget {
             color: Theme.of(context)
                 .colorScheme
                 .onPrimaryContainer
-                .withOpacity(0.65),
+              .withValues(alpha: 0.65),
             letterSpacing: 0.3,
           ),
         ),

@@ -13,7 +13,7 @@ A comprehensive Personal Finance Management application built with Flutter. This
 ### 🎨 Customization & Design
 
 - **Material Design 3**: Fully compliant with Android's modern design language.
-- **Dynamic Themes**: Choose your realm's accent color from **Slate** (Blue-Grey), **Frost** (Cyan), **Spartan** (Red), **Forest** (Teal), **Gold** (Amber), **Mystic** (Purple), and **Earth** (Brown).
+- **Dynamic Themes**: Choose your realm's accent color from **Midgard** (Blue-Grey), **Alfheim** (Light Green), **Vanaheim** (Green), **Jotunheim** (Indigo), **Muspelheim** (Deep Orange), **Niflheim** (Light Blue), **Helheim** (Charcoal), **Asgard** (Gold), and **Svartalfheim** (Bronze).
 - **Navigation Drawer**: Persistent lateral navigation for quick access to all sections.
 - **Dark/Light Mode**: Full support for system, light, and dark themes.
 

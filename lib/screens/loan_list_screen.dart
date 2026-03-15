@@ -21,9 +21,10 @@ class _LoanListScreenState extends State<LoanListScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => Provider.of<LoanProvider>(context, listen: false).fetchLoans(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<LoanProvider>().fetchLoans();
+    });
   }
 
   @override
@@ -198,7 +199,7 @@ class LoanList extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (dialogContext, setState) {
           return AlertDialog(
             title: Text(
               loan.type == LoanType.taken ? 'Pay EMI' : 'Receive EMI',
@@ -225,11 +226,12 @@ class LoanList extends StatelessWidget {
                     TextButton(
                       onPressed: () async {
                         final picked = await showDatePicker(
-                          context: context,
+                          context: dialogContext,
                           initialDate: selectedDate,
                           firstDate: DateTime(2000),
                           lastDate: DateTime.now(),
                         );
+                        if (!dialogContext.mounted) return;
                         if (picked != null) {
                           setState(() {
                             selectedDate = picked;
@@ -256,11 +258,11 @@ class LoanList extends StatelessWidget {
                   // This will automatically update the loan balance via TransactionProvider
 
                   final txProvider = Provider.of<TransactionProvider>(
-                    context,
+                    ctx,
                     listen: false,
                   );
                   final catProvider = Provider.of<CategoryProvider>(
-                    context,
+                    ctx,
                     listen: false,
                   );
 
@@ -271,7 +273,7 @@ class LoanList extends StatelessWidget {
                       id: 999, // Hacky ID, ideally create real category
                       name: 'Loan Payment',
                       iconCode: Icons.attach_money.codePoint,
-                      colorValue: Colors.blue.value,
+                      colorValue: Colors.blue.toARGB32(),
                       type: loan.type == LoanType.taken
                           ? CategoryType.expense
                           : CategoryType.income,

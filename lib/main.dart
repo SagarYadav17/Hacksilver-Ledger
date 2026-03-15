@@ -45,20 +45,22 @@ class MyApp extends StatelessWidget {
 
     return base.copyWith(
       scaffoldBackgroundColor: colorScheme.surface,
-      textTheme: textTheme.copyWith(
-        titleLarge: textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
-        titleMedium: textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-        labelLarge: textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ).apply(
-        bodyColor: colorScheme.onSurface,
-        displayColor: colorScheme.onSurface,
-      ),
+      textTheme: textTheme
+          .copyWith(
+            titleLarge: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+            titleMedium: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            labelLarge: textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          )
+          .apply(
+            bodyColor: colorScheme.onSurface,
+            displayColor: colorScheme.onSurface,
+          ),
       iconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
       appBarTheme: AppBarTheme(
         centerTitle: false,
@@ -88,8 +90,8 @@ class MyApp extends StatelessWidget {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(
-          brightness == Brightness.light ? 0.5 : 0.2,
+        fillColor: colorScheme.surfaceContainerHighest.withValues(
+          alpha: brightness == Brightness.light ? 0.5 : 0.2,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -99,7 +101,10 @@ class MyApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
       ),
       chipTheme: base.chipTheme.copyWith(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -123,13 +128,17 @@ class MyApp extends StatelessWidget {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

@@ -25,7 +25,12 @@ class BackupService {
 
       // 2. Share the file (Easiest way to save to Drive/Local on Android/iOS)
       // Using share_plus is more reliable than managing storage permissions for raw file writes on newer Android.
-      await Share.shareXFiles([XFile(path)], text: 'Hacksilver Ledger Backup');
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(path)],
+          text: 'Hacksilver Ledger Backup',
+        ),
+      );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(

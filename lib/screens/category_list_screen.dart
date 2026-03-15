@@ -66,7 +66,7 @@ class CategoryList extends StatelessWidget {
             final cat = categories[index];
             return ListTile(
               leading: CircleAvatar(
-                backgroundColor: Color(cat.colorValue).withOpacity(0.2),
+                backgroundColor: Color(cat.colorValue).withValues(alpha: 0.2),
                 child: Icon(
                   IconData(
                     cat.iconCode,
@@ -257,7 +257,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                           decoration: BoxDecoration(
                             color: Theme.of(
                               context,
-                            ).primaryColor.withOpacity(0.1),
+                            ).primaryColor.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                             border: _selectedIcon == icon
                                 ? Border.all(
@@ -296,27 +296,31 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             decoration: const InputDecoration(labelText: 'Category Name'),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: RadioListTile<CategoryType>(
-                  title: const Text('Expense'),
-                  value: CategoryType.expense,
-                  groupValue: _type,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (val) => setState(() => _type = val!),
+          RadioGroup<CategoryType>(
+            groupValue: _type,
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _type = value);
+              }
+            },
+            child: Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<CategoryType>(
+                    title: const Text('Expense'),
+                    value: CategoryType.expense,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: RadioListTile<CategoryType>(
-                  title: const Text('Income'),
-                  value: CategoryType.income,
-                  groupValue: _type,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (val) => setState(() => _type = val!),
+                Expanded(
+                  child: RadioListTile<CategoryType>(
+                    title: const Text('Income'),
+                    value: CategoryType.income,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           const Text('Select Icon'),

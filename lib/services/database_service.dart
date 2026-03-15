@@ -117,8 +117,9 @@ class DatabaseService {
 
   Future<List<Category>> getCategories() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps =
-        await db.query(DbConstants.tableCategories);
+    final List<Map<String, dynamic>> maps = await db.query(
+      DbConstants.tableCategories,
+    );
     return List.generate(maps.length, (i) => Category.fromMap(maps[i]));
   }
 
@@ -139,8 +140,9 @@ class DatabaseService {
 
   Future<List<Account>> getAccounts() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps =
-        await db.query(DbConstants.tableAccounts);
+    final List<Map<String, dynamic>> maps = await db.query(
+      DbConstants.tableAccounts,
+    );
     return List.generate(maps.length, (i) => Account.fromMap(maps[i]));
   }
 
@@ -206,7 +208,9 @@ class DatabaseService {
   ) async {
     final db = await database;
     return await db.insert(
-        DbConstants.tableRecurringTransactions, transaction.toMap());
+      DbConstants.tableRecurringTransactions,
+      transaction.toMap(),
+    );
   }
 
   Future<int> updateRecurringTransaction(
@@ -223,8 +227,9 @@ class DatabaseService {
 
   Future<List<RecurringTransaction>> getRecurringTransactions() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps =
-        await db.query(DbConstants.tableRecurringTransactions);
+    final List<Map<String, dynamic>> maps = await db.query(
+      DbConstants.tableRecurringTransactions,
+    );
     return List.generate(
       maps.length,
       (i) => RecurringTransaction.fromMap(maps[i]),
@@ -249,8 +254,9 @@ class DatabaseService {
 
   Future<List<Loan>> getLoans() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps =
-        await db.query(DbConstants.tableLoans);
+    final List<Map<String, dynamic>> maps = await db.query(
+      DbConstants.tableLoans,
+    );
     return List.generate(maps.length, (i) => Loan.fromMap(maps[i]));
   }
 

@@ -70,35 +70,32 @@ class _AddRecurringTransactionScreenState
                 const SizedBox(height: 16),
 
                 // Type Selection
-                Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<CategoryType>(
-                        title: const Text('Expense'),
-                        value: CategoryType.expense,
-                        groupValue: _selectedType,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedType = value!;
-                            _selectedCategoryId = null; // Reset category
-                          });
-                        },
+                RadioGroup<CategoryType>(
+                  groupValue: _selectedType,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedType = value;
+                        _selectedCategoryId = null; // Reset category
+                      });
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: RadioListTile<CategoryType>(
+                          title: const Text('Expense'),
+                          value: CategoryType.expense,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<CategoryType>(
-                        title: const Text('Income'),
-                        value: CategoryType.income,
-                        groupValue: _selectedType,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedType = value!;
-                            _selectedCategoryId = null; // Reset category
-                          });
-                        },
+                      Expanded(
+                        child: RadioListTile<CategoryType>(
+                          title: const Text('Income'),
+                          value: CategoryType.income,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
 

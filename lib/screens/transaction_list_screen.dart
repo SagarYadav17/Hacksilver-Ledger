@@ -232,7 +232,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     orElse: () => Category(
                       name: 'Unknown',
                       iconCode: Icons.help_outline.codePoint,
-                      colorValue: Colors.grey.value,
+                      colorValue: Colors.grey.toARGB32(),
                       type: CategoryType.expense,
                       isCustom: false,
                     ),
@@ -283,10 +283,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('Transaction deleted'),
-                      action: SnackBarAction(
-                        label: 'Undo',
-                        onPressed: () {},
-                      ),
+                      action: SnackBarAction(label: 'Undo', onPressed: () {}),
                     ),
                   );
                 },
@@ -304,7 +301,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
-                        color: colorScheme.outlineVariant.withOpacity(0.5),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
                         width: 0.5,
                       ),
                     ),
@@ -319,15 +318,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: Color(category.colorValue)
-                                  .withOpacity(0.15),
+                              color: Color(
+                                category.colorValue,
+                              ).withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
                               IconData(
                                 category.iconCode,
-                                fontFamily: category.fontFamily ??
-                                    'MaterialIcons',
+                                fontFamily:
+                                    category.fontFamily ?? 'MaterialIcons',
                                 fontPackage: category.fontPackage,
                               ),
                               color: Color(category.colorValue),
@@ -341,12 +341,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                               children: [
                                 Text(
                                   tx.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(fontWeight: FontWeight.w500),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -359,8 +355,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color:
-                                                colorScheme.onSurfaceVariant,
+                                            color: colorScheme.onSurfaceVariant,
                                           ),
                                     ),
                                     const SizedBox(width: 8),
@@ -377,8 +372,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color:
-                                                colorScheme.onSurfaceVariant,
+                                            color: colorScheme.onSurfaceVariant,
                                           ),
                                     ),
                                   ],
@@ -392,9 +386,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             children: [
                               Text(
                                 formatter.format(tx.amount),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
+                                style: Theme.of(context).textTheme.bodyLarge
                                     ?.copyWith(
                                       color: tx.type == CategoryType.income
                                           ? colorScheme.tertiary
@@ -407,9 +399,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                               if (tx.originalAmount != null)
                                 Text(
                                   '${tx.originalAmount!.toStringAsFixed(2)} ${tx.originalCurrency}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
+                                  style: Theme.of(context).textTheme.labelSmall
                                       ?.copyWith(
                                         color: colorScheme.onSurfaceVariant,
                                       ),

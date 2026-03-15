@@ -36,7 +36,7 @@ class RecurringTransactionListScreen extends StatelessWidget {
                     orElse: () => Category(
                       name: 'Unknown',
                       iconCode: Icons.help_outline.codePoint,
-                      colorValue: Colors.grey.value,
+                      colorValue: Colors.grey.toARGB32(),
                       type: CategoryType.expense,
                       isCustom: false,
                     ),
@@ -48,7 +48,7 @@ class RecurringTransactionListScreen extends StatelessWidget {
                   leading: CircleAvatar(
                     backgroundColor: Color(
                       category.colorValue,
-                    ).withOpacity(0.2),
+                    ).withValues(alpha: 0.2),
                     child: Icon(
                       IconData(
                         category.iconCode,

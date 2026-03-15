@@ -100,25 +100,29 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
           child: ListView(
             children: [
               // Type Selection
-              Row(
-                children: [
-                  Expanded(
-                    child: RadioListTile<LoanType>(
-                      title: const Text('Loan Taken'),
-                      value: LoanType.taken,
-                      groupValue: _type,
-                      onChanged: (val) => setState(() => _type = val!),
+              RadioGroup<LoanType>(
+                groupValue: _type,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _type = value);
+                  }
+                },
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<LoanType>(
+                        title: const Text('Loan Taken'),
+                        value: LoanType.taken,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: RadioListTile<LoanType>(
-                      title: const Text('Loan Given'),
-                      value: LoanType.given,
-                      groupValue: _type,
-                      onChanged: (val) => setState(() => _type = val!),
+                    Expanded(
+                      child: RadioListTile<LoanType>(
+                        title: const Text('Loan Given'),
+                        value: LoanType.given,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
 
               TextFormField(
@@ -176,7 +180,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(

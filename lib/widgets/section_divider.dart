@@ -4,11 +4,7 @@ class SectionDivider extends StatelessWidget {
   final double height;
   final bool showLine;
 
-  const SectionDivider({
-    super.key,
-    this.height = 24,
-    this.showLine = false,
-  });
+  const SectionDivider({super.key, this.height = 24, this.showLine = false});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +12,9 @@ class SectionDivider extends StatelessWidget {
       return Padding(
         padding: EdgeInsets.symmetric(vertical: height / 2),
         child: Divider(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.3),
           thickness: 0.5,
         ),
       );

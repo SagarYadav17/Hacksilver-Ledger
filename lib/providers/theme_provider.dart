@@ -48,6 +48,6 @@ class ThemeProvider with ChangeNotifier {
     _seedColor = color;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_colorPrefKey, color.value);
+    await prefs.setInt(_colorPrefKey, color.toARGB32());
   }
 }

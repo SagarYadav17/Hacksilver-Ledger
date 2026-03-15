@@ -19,48 +19,39 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildSectionHeader(
-            context,
-            'Appearance',
-            Icons.palette_outlined,
-          ),
+          _buildSectionHeader(context, 'Appearance', Icons.palette_outlined),
           const SizedBox(height: 12),
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: colorScheme.outlineVariant,
-                width: 0.5,
-              ),
+              side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
             ),
-            child: Column(
-              children: [
-                RadioListTile<ThemeMode>(
-                  title: const Text('System Default'),
-                  value: ThemeMode.system,
-                  groupValue: themeProvider.themeMode,
-                  onChanged: (value) => themeProvider.setThemeMode(value!),
-                ),
-                Divider(color: colorScheme.outlineVariant),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Light Theme'),
-                  value: ThemeMode.light,
-                  groupValue: themeProvider.themeMode,
-                  onChanged: (value) => themeProvider.setThemeMode(value!),
-                ),
-                Divider(color: colorScheme.outlineVariant),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Dark Theme'),
-                  value: ThemeMode.dark,
-                  groupValue: themeProvider.themeMode,
-                  onChanged: (val) {
-                    if (val != null) {
-                      themeProvider.setThemeMode(val);
-                    }
-                  },
-                ),
-              ],
+            child: RadioGroup<ThemeMode>(
+              groupValue: themeProvider.themeMode,
+              onChanged: (value) {
+                if (value != null) {
+                  themeProvider.setThemeMode(value);
+                }
+              },
+              child: Column(
+                children: [
+                  RadioListTile<ThemeMode>(
+                    title: const Text('System Default'),
+                    value: ThemeMode.system,
+                  ),
+                  Divider(color: colorScheme.outlineVariant),
+                  RadioListTile<ThemeMode>(
+                    title: const Text('Light Theme'),
+                    value: ThemeMode.light,
+                  ),
+                  Divider(color: colorScheme.outlineVariant),
+                  RadioListTile<ThemeMode>(
+                    title: const Text('Dark Theme'),
+                    value: ThemeMode.dark,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 28),
@@ -73,10 +64,7 @@ class SettingsScreen extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: colorScheme.outlineVariant,
-                width: 0.5,
-              ),
+              border: Border.all(color: colorScheme.outlineVariant, width: 0.5),
             ),
             padding: const EdgeInsets.all(16),
             child: Wrap(
@@ -87,38 +75,55 @@ class SettingsScreen extends StatelessWidget {
                   context,
                   themeProvider,
                   Colors.blueGrey,
-                  'Slate',
-                ),
-                _buildColorOption(context, themeProvider, Colors.cyan, 'Frost'),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.red[700]!,
-                  'Spartan',
+                  'Midgard',
                 ),
                 _buildColorOption(
                   context,
                   themeProvider,
-                  Colors.teal,
-                  'Forest',
+                  Colors.lightGreenAccent[400]!,
+                  'Alfheim',
                 ),
                 _buildColorOption(
                   context,
                   themeProvider,
-                  Colors.amber[700]!,
-                  'Gold',
+                  Colors.green[700]!,
+                  'Vanaheim',
                 ),
                 _buildColorOption(
                   context,
                   themeProvider,
-                  Colors.deepPurple,
-                  'Mystic',
+                  Colors.indigo[700]!,
+                  'Jotunheim',
                 ),
                 _buildColorOption(
                   context,
                   themeProvider,
-                  Colors.brown,
-                  'Earth',
+                  Colors.deepOrange,
+                  'Muspelheim',
+                ),
+                _buildColorOption(
+                  context,
+                  themeProvider,
+                  Colors.lightBlue,
+                  'Niflheim',
+                ),
+                _buildColorOption(
+                  context,
+                  themeProvider,
+                  Colors.blueGrey[900]!,
+                  'Helheim',
+                ),
+                _buildColorOption(
+                  context,
+                  themeProvider,
+                  Colors.yellow[800]!,
+                  'Asgard',
+                ),
+                _buildColorOption(
+                  context,
+                  themeProvider,
+                  Colors.brown[700]!,
+                  'Svartalfheim',
                 ),
               ],
             ),
@@ -134,10 +139,7 @@ class SettingsScreen extends StatelessWidget {
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: colorScheme.outlineVariant,
-                width: 0.5,
-              ),
+              side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
             ),
             child: Consumer<CurrencyProvider>(
               builder: (context, currencyProvider, child) {
@@ -155,22 +157,10 @@ class SettingsScreen extends StatelessWidget {
                         ? currencyProvider.currency
                         : 'INR',
                     items: const [
-                      DropdownMenuItem(
-                        value: 'INR',
-                        child: Text('INR (₹)'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'USD',
-                        child: Text('USD (\$)'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'EUR',
-                        child: Text('EUR (€)'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'GBP',
-                        child: Text('GBP (£)'),
-                      ),
+                      DropdownMenuItem(value: 'INR', child: Text('INR (₹)')),
+                      DropdownMenuItem(value: 'USD', child: Text('USD (\$)')),
+                      DropdownMenuItem(value: 'EUR', child: Text('EUR (€)')),
+                      DropdownMenuItem(value: 'GBP', child: Text('GBP (£)')),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -193,10 +183,7 @@ class SettingsScreen extends StatelessWidget {
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: colorScheme.outlineVariant,
-                width: 0.5,
-              ),
+              side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
             ),
             child: Column(
               children: [
@@ -254,8 +241,7 @@ class SettingsScreen extends StatelessWidget {
                           ElevatedButton(
                             onPressed: () async {
                               Navigator.pop(ctx);
-                              await BackupService()
-                                  .restoreDatabase(context);
+                              await BackupService().restoreDatabase(context);
                             },
                             child: const Text('Restore'),
                           ),
@@ -288,18 +274,14 @@ class SettingsScreen extends StatelessWidget {
             color: colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            icon,
-            color: colorScheme.onPrimaryContainer,
-            size: 18,
-          ),
+          child: Icon(icon, color: colorScheme.onPrimaryContainer, size: 18),
         ),
         const SizedBox(width: 12),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -311,7 +293,7 @@ class SettingsScreen extends StatelessWidget {
     Color color,
     String label,
   ) {
-    final isSelected = provider.seedColor.value == color.value;
+    final isSelected = provider.seedColor.toARGB32() == color.toARGB32();
     return GestureDetector(
       onTap: () => provider.setSeedColor(color),
       child: Column(
@@ -331,26 +313,22 @@ class SettingsScreen extends StatelessWidget {
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: isSelected
-                ? Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  )
+                ? Icon(Icons.check_rounded, color: Colors.white, size: 24)
                 : null,
           ),
           const SizedBox(height: 8),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w500),
           ),
         ],
       ),
