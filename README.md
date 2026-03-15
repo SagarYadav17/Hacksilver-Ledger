@@ -53,6 +53,93 @@ A comprehensive Personal Finance Management application built with Flutter. This
 - **Icons**: [flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons)
 - **File Handling**: [file_picker](https://pub.dev/packages/file_picker), [permission_handler](https://pub.dev/packages/permission_handler)
 
+## 🗺️ Upcoming Roadmap (Optional Cloud Sync + MCP)
+
+This project is evolving from local-first SQLite to an optional cloud-enabled architecture.
+The current app will continue to work offline, while cloud and AI integrations are introduced in phases.
+
+### Phase 1: One-Way Sync (Local -> Supabase)
+
+**Goal**: Keep SQLite as the primary data source and push local changes to Supabase.
+
+**Upcoming Features**
+
+- Optional Supabase setup using user-provided `project URL` and `anon key`.
+- Manual sync action from the app.
+- Background best-effort upload of local changes.
+- Local-first behavior retained (no breaking changes for existing users).
+
+**Tasks**
+
+- [ ] Add `supabase_flutter` dependency and bootstrap client.
+- [ ] Create app settings screen section for optional cloud setup.
+- [ ] Securely store Supabase credentials/tokens on device.
+- [ ] Create Supabase schema for accounts, categories, transactions, recurring transactions, and loans.
+- [ ] Add `updated_at` and `deleted_at` columns to synced tables.
+- [ ] Build one-way sync service to upload inserts/updates/deletes.
+- [ ] Add sync logs and user-visible error feedback.
+- [ ] Add migration path for existing local users.
+
+### Phase 2: Two-Way Sync (Local <-> Supabase)
+
+**Goal**: Bi-directional sync with robust conflict handling and user-controlled data mode.
+
+**Upcoming Features**
+
+- Three app modes:
+  - Local only
+  - Cloud only
+  - Hybrid sync
+- `sync_status` tracking per record.
+- Pull + push sync with conflict resolution.
+- Periodic background sync and pull-to-refresh sync.
+
+**Tasks**
+
+- [ ] Add `sync_status` field (for example: pending, synced, conflict, failed).
+- [ ] Add `last_synced_at` metadata and per-table sync cursors.
+- [ ] Implement server-to-local delta pull by timestamp/version.
+- [ ] Implement deterministic conflict strategy (last-write-wins or merge rules).
+- [ ] Build conflict UI for manual review when needed.
+- [ ] Add settings UI for mode switching and sync controls.
+- [ ] Add retry queue with exponential backoff.
+- [ ] Add tests for mode switching and sync edge cases.
+
+### Phase 3: Business-Safe FastAPI MCP Server
+
+**Goal**: Provide a secure MCP interface for AI agents without exposing raw database access.
+
+**Upcoming Features**
+
+- Dockerized FastAPI-based MCP server.
+- Tool-based business operations (no raw SQL tools).
+- Supabase-backed operations with user-controlled deployment.
+- Authenticated agent access with audit logs.
+
+**Tasks**
+
+- [ ] Initialize FastAPI project for MCP server.
+- [ ] Define MCP tools for safe operations:
+  - `get_accounts`
+  - `get_transactions`
+  - `create_transaction`
+  - `update_transaction`
+  - `get_monthly_summary`
+- [ ] Enforce request validation and domain rules in service layer.
+- [ ] Add API authentication and rate limiting.
+- [ ] Add structured logging and operation audit trails.
+- [ ] Add Dockerfile + docker-compose setup.
+- [ ] Publish setup guide for self-hosted user deployment.
+- [ ] Add integration tests for all exposed MCP tools.
+
+## ✅ Guiding Principles For The Roadmap
+
+- Offline-first remains the default experience.
+- Cloud sync is optional and user-controlled.
+- Security before convenience (no service-role keys in mobile app).
+- Business-safe AI integration only (no unrestricted data operations).
+- Backward compatibility for existing local users.
+
 ## 🏁 Getting Started
 
 ### Prerequisites

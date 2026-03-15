@@ -52,6 +52,7 @@ class AccountSummary extends StatelessWidget {
                       width: 170,
                       margin: const EdgeInsets.only(right: 12),
                       child: Card(
+                        margin: EdgeInsets.zero,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),

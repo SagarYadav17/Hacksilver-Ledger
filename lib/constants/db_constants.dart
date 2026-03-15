@@ -18,6 +18,7 @@ class DbConstants {
   static const String columnCategoryFontFamily = 'fontFamily';
   static const String columnCategoryFontPackage = 'fontPackage';
   static const String columnCategoryColorValue = 'colorValue';
+  static const String columnCategoryType = 'type';
   static const String columnCategoryIsCustom = 'isCustom';
 
   // Accounts columns
