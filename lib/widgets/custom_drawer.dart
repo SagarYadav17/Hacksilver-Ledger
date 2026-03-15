@@ -122,32 +122,32 @@ class CustomDrawer extends StatelessWidget {
         break;
       case 1:
         if (currentRoute != '/transactions') {
-          Navigator.of(context).pushNamed('/transactions');
+          Navigator.of(context).pushReplacementNamed('/transactions');
         }
         break;
       case 2:
         if (currentRoute != '/recurring-transactions') {
-          Navigator.of(context).pushNamed('/recurring-transactions');
+          Navigator.of(context).pushReplacementNamed('/recurring-transactions');
         }
         break;
       case 3:
         if (currentRoute != '/loans') {
-          Navigator.of(context).pushNamed('/loans');
+          Navigator.of(context).pushReplacementNamed('/loans');
         }
         break;
       case 4:
         if (currentRoute != '/accounts') {
-          Navigator.of(context).pushNamed('/accounts');
+          Navigator.of(context).pushReplacementNamed('/accounts');
         }
         break;
       case 5:
         if (currentRoute != '/categories') {
-          Navigator.of(context).pushNamed('/categories');
+          Navigator.of(context).pushReplacementNamed('/categories');
         }
         break;
       case 6:
         if (currentRoute != '/settings') {
-          Navigator.of(context).pushNamed('/settings');
+          Navigator.of(context).pushReplacementNamed('/settings');
         }
         break;
     }

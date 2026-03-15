@@ -3,9 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/loan.dart';
 import '../providers/loan_provider.dart';
+import '../providers/currency_provider.dart';
+import '../constants/app_constants.dart';
 
 class AddLoanScreen extends StatefulWidget {
-  const AddLoanScreen({super.key});
+  final Loan? loan;
+
+  const AddLoanScreen({super.key, this.loan});
 
   @override
   State<AddLoanScreen> createState() => _AddLoanScreenState();
@@ -22,6 +26,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   LoanType _type = LoanType.taken;
   DateTime _startDate = DateTime.now();
   double _calculatedEMI = 0.0;
+  bool _isInit = true;
 
   @override
   void initState() {
@@ -29,6 +34,25 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     _amountController.addListener(_updateEMI);
     _rateController.addListener(_updateEMI);
     _tenureController.addListener(_updateEMI);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      final loan = widget.loan;
+      if (loan != null) {
+        _titleController.text = loan.title;
+        _amountController.text = loan.amount.toStringAsFixed(2);
+        _rateController.text = loan.interestRate.toStringAsFixed(2);
+        _tenureController.text = loan.tenureMonths.toString();
+        _notesController.text = loan.notes ?? '';
+        _type = loan.type;
+        _startDate = loan.startDate;
+        _calculatedEMI = loan.emiAmount;
+      }
+      _isInit = false;
+    }
   }
 
   @override
@@ -57,9 +81,13 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     }
   }
 
-  void _submitData() {
+  Future<void> _submitData() async {
     if (_formKey.currentState!.validate()) {
-      final newLoan = Loan(
+      final provider = Provider.of<LoanProvider>(context, listen: false);
+      final editingLoan = widget.loan;
+
+      final loan = Loan(
+        id: editingLoan?.id,
         title: _titleController.text,
         amount: double.parse(_amountController.text),
         interestRate: double.parse(_rateController.text),
@@ -67,10 +95,18 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         type: _type,
         startDate: _startDate,
         emiAmount: _calculatedEMI,
+        amountPaid: editingLoan?.amountPaid ?? 0.0,
+        isClosed: editingLoan?.isClosed ?? false,
         notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
 
-      Provider.of<LoanProvider>(context, listen: false).addLoan(newLoan);
+      if (editingLoan == null) {
+        await provider.addLoan(loan);
+      } else {
+        await provider.updateLoan(loan);
+      }
+
+      if (!mounted) return;
       Navigator.of(context).pop();
     }
   }
@@ -91,8 +127,13 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currencyCode = context.watch<CurrencyProvider>().currency;
+    final currencySymbol =
+        AppConstants.currencySymbols[currencyCode] ?? currencyCode;
+    final isEditing = widget.loan != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Loan')),
+      appBar: AppBar(title: Text(isEditing ? 'Edit Loan' : 'Add Loan')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -125,6 +166,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                 ),
               ),
 
+              const SizedBox(height: 16),
+
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -132,6 +175,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                 ),
                 validator: (val) => val!.isEmpty ? 'Enter a title' : null,
               ),
+
+              const SizedBox(height: 16),
 
               Row(
                 children: [
@@ -160,6 +205,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                 ],
               ),
 
+              const SizedBox(height: 16),
+
               TextFormField(
                 controller: _tenureController,
                 decoration: const InputDecoration(labelText: 'Tenure (Months)'),
@@ -168,6 +215,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                     int.tryParse(val!) == null ? 'Invalid tenure' : null,
               ),
 
+              const SizedBox(height: 16),
+
               ListTile(
                 title: const Text('Start Date'),
                 subtitle: Text(DateFormat.yMMMd().format(_startDate)),
@@ -175,7 +224,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                 onTap: _presentDatePicker,
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               Container(
                 padding: const EdgeInsets.all(16),
@@ -191,7 +240,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '\$${_calculatedEMI.toStringAsFixed(2)}',
+                      '$currencySymbol${_calculatedEMI.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 24,
                         color: Theme.of(context).primaryColor,
@@ -219,7 +268,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('Save Loan'),
+                child: Text(isEditing ? 'Update Loan' : 'Save Loan'),
               ),
             ],
           ),

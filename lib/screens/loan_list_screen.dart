@@ -7,6 +7,9 @@ import '../models/transaction.dart';
 import '../models/category.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/currency_provider.dart';
+import '../providers/account_provider.dart';
+import '../constants/app_constants.dart';
 import '../widgets/custom_drawer.dart';
 import 'loan_details_screen.dart';
 
@@ -65,8 +68,11 @@ class LoanList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LoanProvider>(
-      builder: (context, provider, child) {
+    return Consumer2<LoanProvider, CurrencyProvider>(
+      builder: (context, provider, currencyProvider, child) {
+        final currencySymbol =
+            AppConstants.currencySymbols[currencyProvider.currency] ??
+            currencyProvider.currency;
         final loans = provider.loans.where((l) => l.type == type).toList();
 
         if (loans.isEmpty) {
@@ -129,8 +135,12 @@ class LoanList extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Amount: \$${loan.amount.toStringAsFixed(0)}'),
-                          Text('EMI: \$${loan.emiAmount.toStringAsFixed(2)}'),
+                          Text(
+                            'Amount: $currencySymbol${loan.amount.toStringAsFixed(0)}',
+                          ),
+                          Text(
+                            'EMI: $currencySymbol${loan.emiAmount.toStringAsFixed(2)}',
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -143,7 +153,7 @@ class LoanList extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Paid: \$${loan.amountPaid.toStringAsFixed(0)} / \$${loan.amount.toStringAsFixed(0)}',
+                        'Paid: $currencySymbol${loan.amountPaid.toStringAsFixed(0)} / $currencySymbol${loan.amount.toStringAsFixed(0)}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -195,11 +205,19 @@ class LoanList extends StatelessWidget {
     );
     final commentsController = TextEditingController();
     DateTime selectedDate = DateTime.now();
+    int? selectedAccountId;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogContext, setState) {
+          final currencyProvider = context.read<CurrencyProvider>();
+          final accountProvider = context.read<AccountProvider>();
+          final currencySymbol =
+              AppConstants.currencySymbols[currencyProvider.currency] ??
+              currencyProvider.currency;
+          final accounts = accountProvider.accounts;
+
           return AlertDialog(
             title: Text(
               loan.type == LoanType.taken ? 'Pay EMI' : 'Receive EMI',
@@ -211,12 +229,36 @@ class LoanList extends StatelessWidget {
                 const SizedBox(height: 16),
                 TextField(
                   controller: amountController,
-                  decoration: const InputDecoration(labelText: 'Amount'),
+                  decoration: InputDecoration(
+                    labelText: 'Amount',
+                    prefixText: '$currencySymbol ',
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: commentsController,
                   decoration: const InputDecoration(labelText: 'Comments'),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<int>(
+                  initialValue: selectedAccountId,
+                  decoration: const InputDecoration(
+                    labelText: 'Account',
+                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                  ),
+                  items: accounts
+                      .map(
+                        (acc) => DropdownMenuItem<int>(
+                          value: acc.id,
+                          child: Text(acc.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedAccountId = value;
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -254,6 +296,22 @@ class LoanList extends StatelessWidget {
                   final amount = double.tryParse(amountController.text);
                   if (amount == null || amount <= 0) return;
 
+                  if (accounts.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please create an account first'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (selectedAccountId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select an account')),
+                    );
+                    return;
+                  }
+
                   // 1. Create a Transaction linked to the loan
                   // This will automatically update the loan balance via TransactionProvider
 
@@ -266,31 +324,37 @@ class LoanList extends StatelessWidget {
                     listen: false,
                   );
 
-                  // Find or create a 'Loan' category
-                  var loanCategory = catProvider.categories.firstWhere(
+                  final txType = loan.type == LoanType.taken
+                      ? CategoryType.expense
+                      : CategoryType.income;
+                  final matchingCategories = catProvider.categories
+                      .where((c) => c.type == txType)
+                      .toList();
+
+                  if (matchingCategories.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'No category found for this loan transaction type',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final loanCategory = matchingCategories.firstWhere(
                     (c) => c.name == 'Loan Payment',
-                    orElse: () => Category(
-                      id: 999, // Hacky ID, ideally create real category
-                      name: 'Loan Payment',
-                      iconCode: Icons.attach_money.codePoint,
-                      colorValue: Colors.blue.toARGB32(),
-                      type: loan.type == LoanType.taken
-                          ? CategoryType.expense
-                          : CategoryType.income,
-                      isCustom: false,
-                    ),
+                    orElse: () => matchingCategories.first,
                   );
 
                   final newTx = Transaction(
                     title: 'EMI: ${loan.title}',
                     amount: amount,
                     date: selectedDate,
-                    type: loan.type == LoanType.taken
-                        ? CategoryType.expense
-                        : CategoryType.income,
-                    categoryId: loanCategory.id ?? 0,
+                    type: txType,
+                    categoryId: loanCategory.id!,
                     notes: commentsController.text,
-                    accountId: null, // Could add account selection here later
+                    accountId: selectedAccountId,
                     loanId: loan.id, // LINK TO LOAN
                   );
 

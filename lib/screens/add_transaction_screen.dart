@@ -112,6 +112,37 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         categoryId = _selectedCategory!.id!;
       }
 
+      int? validatedLoanId = _selectedLoanId;
+      if (_type == CategoryType.transfer) {
+        validatedLoanId = null;
+      }
+
+      if (validatedLoanId != null) {
+        final loans = Provider.of<LoanProvider>(context, listen: false).loans;
+        try {
+          final linkedLoan = loans.firstWhere((l) => l.id == validatedLoanId);
+          final isValidLoanLink =
+              (_type == CategoryType.expense && linkedLoan.type == LoanType.taken) ||
+              (_type == CategoryType.income && linkedLoan.type == LoanType.given);
+
+          if (!isValidLoanLink) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Invalid loan link. Use Expense for Taken loans and Income for Given loans.',
+                ),
+              ),
+            );
+            return;
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Selected loan was not found')),
+          );
+          return;
+        }
+      }
+
       final txProvider = Provider.of<TransactionProvider>(
         context,
         listen: false,
@@ -131,7 +162,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           transferAccountId: _type == CategoryType.transfer
               ? _transferAccountId
               : null,
-          loanId: _selectedLoanId,
+          loanId: validatedLoanId,
           originalAmount: _isForeignCurrency ? _originalAmount : null,
           originalCurrency: _isForeignCurrency ? _originalCurrency : null,
         );
@@ -148,7 +179,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           transferAccountId: _type == CategoryType.transfer
               ? _transferAccountId
               : null,
-          loanId: _selectedLoanId,
+          loanId: validatedLoanId,
           originalAmount: _isForeignCurrency ? _originalAmount : null,
           originalCurrency: _isForeignCurrency ? _originalCurrency : null,
         );
@@ -701,21 +732,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ),
               if (_type != CategoryType.transfer)
                 const SizedBox(height: 16),
-              Consumer<LoanProvider>(
-                builder: (context, loanProvider, child) {
-                  // Only taken/given relevant to txn type?
-                  // Let's list all open loans.
-                  // Or filter: If Expense -> Paying Loan (Taken) or Giving Loan (Given).
-                  // If Income -> Receiving Loan (Given) or Getting Loan (Taken).
-                  // For simplicity, list all open loans for now.
+              if (_type != CategoryType.transfer)
+                Consumer<LoanProvider>(
+                  builder: (context, loanProvider, child) {
+                    final loans = loanProvider.loans
+                        .where(
+                          (l) =>
+                              !l.isClosed &&
+                              ((_type == CategoryType.expense &&
+                                      l.type == LoanType.taken) ||
+                                  (_type == CategoryType.income &&
+                                      l.type == LoanType.given)),
+                        )
+                        .toList();
 
-                  final loans = loanProvider.loans
-                      .where((l) => !l.isClosed)
-                      .toList();
+                    if (loans.isEmpty) return const SizedBox.shrink();
 
-                  if (loans.isEmpty) return const SizedBox.shrink();
+                    final dropdownValue = loans.any((l) => l.id == _selectedLoanId)
+                        ? _selectedLoanId
+                        : null;
 
-                  return Card(
+                    return Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -740,7 +777,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Link this transaction to an open loan',
+                            'Only repayment-compatible open loans are shown',
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
@@ -756,7 +793,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               labelText: 'Select Loan',
                               prefixIcon: Icon(Icons.credit_score_outlined),
                             ),
-                            initialValue: _selectedLoanId,
+                            initialValue: dropdownValue,
                             items: [
                               const DropdownMenuItem<int>(
                                 value: null,
@@ -781,9 +818,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ],
                       ),
                     ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
               const SizedBox(height: 24),
               FilledButton(
                 style: FilledButton.styleFrom(
@@ -819,6 +856,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         onTap: () {
           setState(() {
             _type = type;
+            _selectedLoanId = null;
             // Reset category if switching type (unless editing same txn)
             if (_selectedCategory != null &&
                 _selectedCategory!.type != type) {

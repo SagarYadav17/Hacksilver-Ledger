@@ -84,7 +84,14 @@ class TransactionProvider with ChangeNotifier {
 
       // Update loan balance if transaction is linked
       if (transaction.loanId != null) {
-        await _updateLoanBalance(transaction.loanId!, transaction.amount);
+        final delta = await _calculateLoanPaymentDelta(
+          transaction.loanId!,
+          transaction.type,
+          transaction.amount,
+        );
+        if (delta != 0) {
+          await _updateLoanBalance(transaction.loanId!, delta);
+        }
       }
 
       await fetchTransactions();
@@ -140,7 +147,14 @@ class TransactionProvider with ChangeNotifier {
 
       // Revert loan balance if transaction is linked
       if (transaction.loanId != null) {
-        await _updateLoanBalance(transaction.loanId!, -transaction.amount);
+        final delta = await _calculateLoanPaymentDelta(
+          transaction.loanId!,
+          transaction.type,
+          transaction.amount,
+        );
+        if (delta != 0) {
+          await _updateLoanBalance(transaction.loanId!, -delta);
+        }
       }
 
       await _dbService.deleteTransaction(id);
@@ -231,10 +245,24 @@ class TransactionProvider with ChangeNotifier {
 
       // 4. Update loan balances
       if (oldTransaction.loanId != null) {
-        await _updateLoanBalance(oldTransaction.loanId!, -oldTransaction.amount);
+        final oldDelta = await _calculateLoanPaymentDelta(
+          oldTransaction.loanId!,
+          oldTransaction.type,
+          oldTransaction.amount,
+        );
+        if (oldDelta != 0) {
+          await _updateLoanBalance(oldTransaction.loanId!, -oldDelta);
+        }
       }
       if (transaction.loanId != null) {
-        await _updateLoanBalance(transaction.loanId!, transaction.amount);
+        final newDelta = await _calculateLoanPaymentDelta(
+          transaction.loanId!,
+          transaction.type,
+          transaction.amount,
+        );
+        if (newDelta != 0) {
+          await _updateLoanBalance(transaction.loanId!, newDelta);
+        }
       }
 
       await fetchTransactions();
@@ -253,10 +281,8 @@ class TransactionProvider with ChangeNotifier {
     final loans = await _dbService.getLoans();
     try {
       final loan = loans.firstWhere((l) => l.id == loanId);
-      double newAmountPaid = loan.amountPaid + delta;
-
-      // Ensure non-negative
-      if (newAmountPaid < 0) newAmountPaid = 0;
+      final rawAmountPaid = loan.amountPaid + delta;
+      final newAmountPaid = rawAmountPaid.clamp(0.0, loan.amount).toDouble();
 
       final updatedLoan = Loan(
         id: loan.id,
@@ -275,6 +301,27 @@ class TransactionProvider with ChangeNotifier {
       await _dbService.updateLoan(updatedLoan);
     } catch (e) {
       debugPrint('Error updating loan balance: $e');
+    }
+  }
+
+  Future<double> _calculateLoanPaymentDelta(
+    int loanId,
+    CategoryType txType,
+    double amount,
+  ) async {
+    if (txType == CategoryType.transfer) return 0.0;
+
+    final loans = await _dbService.getLoans();
+    try {
+      final loan = loans.firstWhere((l) => l.id == loanId);
+      final isRepayment =
+          (loan.type == LoanType.taken && txType == CategoryType.expense) ||
+          (loan.type == LoanType.given && txType == CategoryType.income);
+
+      return isRepayment ? amount : 0.0;
+    } catch (e) {
+      debugPrint('Error calculating loan payment delta: $e');
+      return 0.0;
     }
   }
 

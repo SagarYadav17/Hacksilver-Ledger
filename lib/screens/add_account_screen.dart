@@ -72,6 +72,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
                 initialValue: _name,
@@ -86,6 +87,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                   _name = val!;
                 },
               ),
+              const SizedBox(height: 16),
               DropdownButtonFormField<AccountType>(
                 initialValue: _type,
                 items: AccountType.values
@@ -105,6 +107,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 },
                 decoration: const InputDecoration(labelText: 'Account Type'),
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 initialValue: _initialBalance.toString(),
                 decoration: const InputDecoration(labelText: 'Initial Balance'),
@@ -119,9 +122,12 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                   _initialBalance = double.parse(val!);
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _submitData,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
                 child: Text(
                   widget.account == null ? 'Add Account' : 'Update Account',
                 ),

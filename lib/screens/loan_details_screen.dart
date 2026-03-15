@@ -6,7 +6,10 @@ import '../models/category.dart';
 import '../providers/loan_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/currency_provider.dart';
+import '../constants/app_constants.dart';
 import 'add_transaction_screen.dart';
+import 'add_loan_screen.dart';
 
 class LoanDetailsScreen extends StatelessWidget {
   final int loanId;
@@ -17,8 +20,12 @@ class LoanDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Loan Details')),
-      body: Consumer2<LoanProvider, TransactionProvider>(
-        builder: (context, loanProvider, txProvider, child) {
+      body: Consumer3<LoanProvider, TransactionProvider, CurrencyProvider>(
+        builder: (context, loanProvider, txProvider, currencyProvider, child) {
+          final currencySymbol =
+              AppConstants.currencySymbols[currencyProvider.currency] ??
+              currencyProvider.currency;
+
           final loan = loanProvider.loans.firstWhere(
             (l) => l.id == loanId,
             orElse: () => Loan(
@@ -50,6 +57,24 @@ class LoanDetailsScreen extends StatelessWidget {
 
           return Column(
             children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12, right: 16),
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AddLoanScreen(loan: loan),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Edit Loan'),
+                  ),
+                ),
+              ),
+
               // Loan Summary Card
               Card(
                 margin: const EdgeInsets.all(16),
@@ -101,16 +126,16 @@ class LoanDetailsScreen extends StatelessWidget {
                         children: [
                           _buildsummaryItem(
                             'Amount',
-                            loan.amount.toStringAsFixed(0),
+                            '$currencySymbol${loan.amount.toStringAsFixed(0)}',
                           ),
                           _buildsummaryItem(
                             'Paid',
-                            loan.amountPaid.toStringAsFixed(0),
+                            '$currencySymbol${loan.amountPaid.toStringAsFixed(0)}',
                             color: Colors.green,
                           ),
                           _buildsummaryItem(
                             'Remaining',
-                            (loan.amount - loan.amountPaid).toStringAsFixed(0),
+                            '$currencySymbol${(loan.amount - loan.amountPaid).toStringAsFixed(0)}',
                             color: Colors.red,
                           ),
                         ],
@@ -197,7 +222,7 @@ class LoanDetailsScreen extends StatelessWidget {
                             title: Text(tx.title),
                             subtitle: Text(DateFormat.yMMMd().format(tx.date)),
                             trailing: Text(
-                              tx.amount.toStringAsFixed(2),
+                              '$currencySymbol${tx.amount.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: tx.type == CategoryType.income
