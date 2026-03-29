@@ -5,6 +5,7 @@ import '../models/loan.dart';
 import '../providers/loan_provider.dart';
 import '../providers/currency_provider.dart';
 import '../constants/app_constants.dart';
+import '../utils/security_utils.dart';
 
 class AddLoanScreen extends StatefulWidget {
   final Loan? loan;
@@ -83,21 +84,76 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
 
   Future<void> _submitData() async {
     if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      // Validate title
+      final titleValidation = SecurityUtils.validateTitle(_titleController.text);
+      if (!titleValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(titleValidation.errorMessage!)),
+        );
+        return;
+      }
+
+      // Validate amount
+      final amountValidation = SecurityUtils.validateAmount(
+        _amountController.text,
+        maxValue: 999999999.99,
+      );
+      if (!amountValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(amountValidation.errorMessage!)),
+        );
+        return;
+      }
+
+      // Validate interest rate
+      final rateValidation = SecurityUtils.validateInterestRate(_rateController.text);
+      if (!rateValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(rateValidation.errorMessage!)),
+        );
+        return;
+      }
+
+      // Validate tenure
+      final tenureValidation = SecurityUtils.validateInteger(
+        _tenureController.text,
+        minValue: 1,
+        maxValue: 600, // Max 50 years
+        fieldName: 'Tenure',
+      );
+      if (!tenureValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tenureValidation.errorMessage!)),
+        );
+        return;
+      }
+
+      // Validate notes (optional)
+      final notesValidation = SecurityUtils.validateNotes(_notesController.text);
+      if (!notesValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(notesValidation.errorMessage!)),
+        );
+        return;
+      }
+
       final provider = Provider.of<LoanProvider>(context, listen: false);
       final editingLoan = widget.loan;
 
       final loan = Loan(
         id: editingLoan?.id,
-        title: _titleController.text,
-        amount: double.parse(_amountController.text),
-        interestRate: double.parse(_rateController.text),
-        tenureMonths: int.parse(_tenureController.text),
+        title: titleValidation.value,
+        amount: amountValidation.value,
+        interestRate: rateValidation.value,
+        tenureMonths: tenureValidation.value,
         type: _type,
         startDate: _startDate,
         emiAmount: _calculatedEMI,
         amountPaid: editingLoan?.amountPaid ?? 0.0,
         isClosed: editingLoan?.isClosed ?? false,
-        notes: _notesController.text.isEmpty ? null : _notesController.text,
+        notes: notesValidation.value.isEmpty ? null : notesValidation.value,
       );
 
       if (editingLoan == null) {

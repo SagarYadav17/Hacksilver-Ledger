@@ -6,12 +6,19 @@ class DbConstants {
   static const String tableTransactions = 'transactions';
   static const String tableRecurringTransactions = 'recurring_transactions';
   static const String tableLoans = 'loans';
+  static const String tableSyncMetadata = 'sync_metadata';
 
   // Common columns
   static const String columnId = 'id';
   static const String columnName = 'name';
   static const String columnDate = 'date';
   static const String columnType = 'type';
+
+  // Sync columns (common across all synced tables)
+  static const String columnSyncId = 'syncId';
+  static const String columnUpdatedAt = 'updatedAt';
+  static const String columnDeletedAt = 'deletedAt';
+  static const String columnSyncStatus = 'syncStatus';
 
   // Categories columns
   static const String columnCategoryIconCode = 'iconCode';
@@ -55,7 +62,12 @@ class DbConstants {
   static const String columnLoanAmountPaid = 'amountPaid';
   static const String columnLoanAccountId = 'accountId';
 
+  // Sync metadata columns
+  static const String columnLastSyncAt = 'lastSyncAt';
+  static const String columnSupabaseUrl = 'supabaseUrl';
+  static const String columnSupabaseKey = 'supabaseKey';
+
   // Database name
   static const String databaseName = 'hacksilver_ledger.db';
-  static const int databaseVersion = 1;
+  static const int databaseVersion = 2; // Bumped for sync migration
 }

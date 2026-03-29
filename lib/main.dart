@@ -16,6 +16,7 @@ import 'screens/settings_screen.dart';
 import 'providers/theme_provider.dart';
 import 'providers/loan_provider.dart';
 import 'providers/currency_provider.dart';
+import 'providers/sync_provider.dart';
 import 'screens/loan_list_screen.dart';
 import 'screens/add_loan_screen.dart';
 import 'screens/account_list_screen.dart';
@@ -164,6 +165,7 @@ class MyApp extends StatelessWidget {
                 ..checkAndGenerateRecurringTransactions(),
         ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => SyncProvider()..initialize()),
         ChangeNotifierProxyProvider<DatabaseService, LoanProvider>(
           create: (_) => LoanProvider(DatabaseService()),
           update: (_, db, previous) => previous ?? LoanProvider(db),
