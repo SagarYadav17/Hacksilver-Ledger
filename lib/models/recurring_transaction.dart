@@ -1,8 +1,9 @@
 import 'category.dart';
+import 'sync_model.dart';
 
 enum Frequency { daily, monthly, quarterly, yearly }
 
-class RecurringTransaction {
+class RecurringTransaction implements SyncableModel {
   final int? id;
   final String title;
   final double amount;
@@ -14,6 +15,16 @@ class RecurringTransaction {
   final DateTime nextDueDate;
   final bool isActive;
   final String? notes;
+  
+  // Sync fields
+  @override
+  final String? syncId;
+  @override
+  final DateTime? updatedAt;
+  @override
+  final DateTime? deletedAt;
+  @override
+  final SyncStatus syncStatus;
 
   RecurringTransaction({
     this.id,
@@ -27,7 +38,47 @@ class RecurringTransaction {
     required this.nextDueDate,
     this.isActive = true,
     this.notes,
+    this.syncId,
+    this.updatedAt,
+    this.deletedAt,
+    this.syncStatus = SyncStatus.pending,
   });
+
+  RecurringTransaction copyWith({
+    int? id,
+    String? title,
+    double? amount,
+    CategoryType? type,
+    int? categoryId,
+    int? accountId,
+    Frequency? frequency,
+    DateTime? startDate,
+    DateTime? nextDueDate,
+    bool? isActive,
+    String? notes,
+    String? syncId,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    SyncStatus? syncStatus,
+  }) {
+    return RecurringTransaction(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      categoryId: categoryId ?? this.categoryId,
+      accountId: accountId ?? this.accountId,
+      frequency: frequency ?? this.frequency,
+      startDate: startDate ?? this.startDate,
+      nextDueDate: nextDueDate ?? this.nextDueDate,
+      isActive: isActive ?? this.isActive,
+      notes: notes ?? this.notes,
+      syncId: syncId ?? this.syncId,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -42,6 +93,10 @@ class RecurringTransaction {
       'nextDueDate': nextDueDate.toIso8601String(),
       'isActive': isActive ? 1 : 0,
       'notes': notes,
+      'syncId': syncId,
+      'updatedAt': updatedAt?.toIso8601String(),
+      'deletedAt': deletedAt?.toIso8601String(),
+      'syncStatus': syncStatus.toValue(),
     };
   }
 
@@ -58,34 +113,12 @@ class RecurringTransaction {
       nextDueDate: DateTime.parse(map['nextDueDate']),
       isActive: map['isActive'] == 1,
       notes: map['notes'],
-    );
-  }
-
-  RecurringTransaction copyWith({
-    int? id,
-    String? title,
-    double? amount,
-    CategoryType? type,
-    int? categoryId,
-    int? accountId,
-    Frequency? frequency,
-    DateTime? startDate,
-    DateTime? nextDueDate,
-    bool? isActive,
-    String? notes,
-  }) {
-    return RecurringTransaction(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      amount: amount ?? this.amount,
-      type: type ?? this.type,
-      categoryId: categoryId ?? this.categoryId,
-      accountId: accountId ?? this.accountId,
-      frequency: frequency ?? this.frequency,
-      startDate: startDate ?? this.startDate,
-      nextDueDate: nextDueDate ?? this.nextDueDate,
-      isActive: isActive ?? this.isActive,
-      notes: notes ?? this.notes,
+      syncId: map['syncId'],
+      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
+      deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
+      syncStatus: map['syncStatus'] != null 
+          ? SyncStatusExtension.fromValue(map['syncStatus']) 
+          : SyncStatus.pending,
     );
   }
 
@@ -137,5 +170,25 @@ class RecurringTransaction {
           currentDueDate.minute,
         );
     }
+  }
+
+  @override
+  Map<String, dynamic> toSyncMap() {
+    return {
+      'id': syncId ?? generateSyncId(),
+      'local_id': id,
+      'title': title,
+      'amount': amount,
+      'type': type.name,
+      'category_id': categoryId,
+      'account_id': accountId,
+      'frequency': frequency.name,
+      'start_date': startDate.toIso8601String(),
+      'next_due_date': nextDueDate.toIso8601String(),
+      'is_active': isActive,
+      'notes': notes,
+      'updated_at': (updatedAt ?? DateTime.now()).toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+    };
   }
 }

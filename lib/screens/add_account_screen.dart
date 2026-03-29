@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/account.dart';
 import '../providers/account_provider.dart';
+import '../utils/security_utils.dart';
 
 class AddAccountScreen extends StatefulWidget {
   final Account? account;
@@ -36,6 +37,31 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      // Validate account name
+      final nameValidation = SecurityUtils.validateTitle(_name, maxLength: 50);
+      if (!nameValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(nameValidation.errorMessage!)),
+        );
+        return;
+      }
+      _name = nameValidation.value;
+
+      // Validate initial balance
+      final balanceValidation = SecurityUtils.validateAmount(
+        _initialBalance.toString(),
+        allowNegative: true,
+        minValue: -999999999.99,
+        maxValue: 999999999.99,
+      );
+      if (!balanceValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(balanceValidation.errorMessage!)),
+        );
+        return;
+      }
+      _initialBalance = balanceValidation.value;
+
       final provider = Provider.of<AccountProvider>(context, listen: false);
 
       if (widget.account != null) {
@@ -44,8 +70,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           id: widget.account!.id,
           name: _name,
           type: _type,
-          balance:
-              _initialBalance, // Note: Editing balance directly might be risky if transactions exist, but for now simple edit.
+          balance: _initialBalance,
         );
         provider.updateAccount(updatedAccount);
       } else {

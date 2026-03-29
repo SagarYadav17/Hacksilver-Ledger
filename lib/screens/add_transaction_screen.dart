@@ -4,11 +4,11 @@ import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../models/category.dart';
 import '../models/loan.dart';
-
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/account_provider.dart';
 import '../providers/loan_provider.dart';
+import '../utils/security_utils.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final Transaction? transaction;
@@ -76,6 +76,29 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void _submitData() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+
+      // Validate title securely
+      final titleValidation = SecurityUtils.validateTitle(_title);
+      if (!titleValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(titleValidation.errorMessage!)),
+        );
+        return;
+      }
+      _title = titleValidation.value;
+
+      // Validate amount securely
+      final amountValidation = SecurityUtils.validateAmount(
+        _amount.toString(),
+        maxValue: 999999999.99,
+      );
+      if (!amountValidation.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(amountValidation.errorMessage!)),
+        );
+        return;
+      }
+      _amount = amountValidation.value;
 
       int categoryId;
       if (_type == CategoryType.transfer) {
