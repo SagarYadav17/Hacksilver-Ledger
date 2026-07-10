@@ -14,6 +14,7 @@ class SyncProvider extends ChangeNotifier {
   String? _supabaseUrl;
   String? _lastError;
   SyncResult? _lastResult;
+  List<Map<String, dynamic>> _syncHistory = [];
 
   // Getters
   bool get isSyncing => _isSyncing;
@@ -23,11 +24,13 @@ class SyncProvider extends ChangeNotifier {
   String? get supabaseUrl => _supabaseUrl;
   String? get lastError => _lastError;
   SyncResult? get lastResult => _lastResult;
+  List<Map<String, dynamic>> get syncHistory => _syncHistory;
 
   /// Initialize and load configuration
   Future<void> initialize() async {
     await _loadConfiguration();
     await _updatePendingCount();
+    await _loadSyncHistory();
   }
 
   /// Load saved credentials and sync status
@@ -94,6 +97,7 @@ class SyncProvider extends ChangeNotifier {
     _lastSyncAt = null;
     _lastError = null;
     _lastResult = null;
+    await _loadSyncHistory();
     notifyListeners();
   }
 
@@ -133,7 +137,16 @@ class SyncProvider extends ChangeNotifier {
         _lastError = result.errorMessage;
       }
 
+      await _dbService.insertSyncHistory(
+        success: result.success,
+        syncedCount: result.syncedCount,
+        message: result.success
+            ? 'Uploaded ${result.syncedCount} item(s)'
+            : result.errorMessage,
+      );
+
       await _updatePendingCount();
+      await _loadSyncHistory();
       
       // Refresh lastSyncAt from database
       final metadata = await _dbService.getSyncMetadata();
@@ -145,6 +158,12 @@ class SyncProvider extends ChangeNotifier {
     } catch (e) {
       _lastError = 'Sync failed: $e';
       _lastResult = SyncResult.error(_lastError);
+      await _dbService.insertSyncHistory(
+        success: false,
+        syncedCount: 0,
+        message: _lastError,
+      );
+      await _loadSyncHistory();
       return _lastResult!;
     } finally {
       _isSyncing = false;
@@ -155,6 +174,15 @@ class SyncProvider extends ChangeNotifier {
   /// Refresh pending count
   Future<void> refreshPendingCount() async {
     await _updatePendingCount();
+  }
+
+  Future<void> _loadSyncHistory() async {
+    try {
+      _syncHistory = await _dbService.getSyncHistory();
+    } catch (e) {
+      _syncHistory = [];
+    }
+    notifyListeners();
   }
 
   /// Check if there are any sync conflicts

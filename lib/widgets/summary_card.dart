@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/account_provider.dart';
 import '../providers/currency_provider.dart';
+import '../providers/security_provider.dart';
 import '../models/category.dart';
 
 class SummaryCard extends StatelessWidget {
@@ -14,6 +15,7 @@ class SummaryCard extends StatelessWidget {
     final currency = Provider.of<CurrencyProvider>(context).currency;
     final currencySymbol = _getCurrencySymbol(currency);
     final colorScheme = Theme.of(context).colorScheme;
+    final securityProvider = Provider.of<SecurityProvider>(context);
     final formatter = NumberFormat.currency(
       symbol: currencySymbol,
       decimalDigits: 2,
@@ -26,9 +28,11 @@ class SummaryCard extends StatelessWidget {
         final now = DateTime.now();
         final currentMonthStart = DateTime(now.year, now.month, 1);
         final currentMonthTransactions = txProvider.transactions
-            .where((tx) =>
-                tx.date.isAfter(currentMonthStart) &&
-                tx.date.isBefore(now.add(const Duration(days: 1))))
+            .where(
+              (tx) =>
+                  tx.date.isAfter(currentMonthStart) &&
+                  tx.date.isBefore(now.add(const Duration(days: 1))),
+            )
             .toList();
 
         final currentMonthIncome = currentMonthTransactions
@@ -52,9 +56,11 @@ class SummaryCard extends StatelessWidget {
         );
 
         final lastMonthTransactions = txProvider.transactions
-            .where((tx) =>
-                tx.date.isAfter(lastMonthStart) &&
-                tx.date.isBefore(lastMonthEnd))
+            .where(
+              (tx) =>
+                  tx.date.isAfter(lastMonthStart) &&
+                  tx.date.isBefore(lastMonthEnd),
+            )
             .toList();
 
         final lastMonthIncome = lastMonthTransactions
@@ -68,22 +74,12 @@ class SummaryCard extends StatelessWidget {
         return Card(
           elevation: 0,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          color: colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Container(
+          child: Padding(
             padding: const EdgeInsets.all(24.0),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primaryContainer,
-                  colorScheme.secondaryContainer,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -96,12 +92,11 @@ class SummaryCard extends StatelessWidget {
                         children: [
                           Text(
                             'Available Balance',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelLarge
+                            style: Theme.of(context).textTheme.labelLarge
                                 ?.copyWith(
-                                  color: colorScheme.onPrimaryContainer
-                                      .withValues(alpha: 0.7),
+                                  color: colorScheme.onPrimary.withValues(
+                                    alpha: 0.72,
+                                  ),
                                   letterSpacing: 0.5,
                                 ),
                           ),
@@ -110,13 +105,13 @@ class SummaryCard extends StatelessWidget {
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              formatter.format(accProvider.totalBalance),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .displayLarge
+                              securityProvider.maskAmount(
+                                formatter.format(accProvider.totalBalance),
+                              ),
+                              style: Theme.of(context).textTheme.displayLarge
                                   ?.copyWith(
                                     fontWeight: FontWeight.w900,
-                                    color: colorScheme.onPrimaryContainer,
+                                    color: colorScheme.onPrimary,
                                     letterSpacing: -1,
                                   ),
                             ),
@@ -129,13 +124,12 @@ class SummaryCard extends StatelessWidget {
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: colorScheme.onPrimaryContainer.withValues(alpha: 0.08),
+                        color: colorScheme.onPrimary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         Icons.wallet_outlined,
-                        color: colorScheme.onPrimaryContainer
-                            .withValues(alpha: 0.5),
+                        color: colorScheme.onPrimary.withValues(alpha: 0.78),
                         size: 28,
                       ),
                     ),
@@ -145,7 +139,7 @@ class SummaryCard extends StatelessWidget {
                 // Divider
                 Container(
                   height: 1,
-                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.1),
+                  color: colorScheme.onPrimary.withValues(alpha: 0.16),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -164,7 +158,7 @@ class SummaryCard extends StatelessWidget {
                     Container(
                       height: 60,
                       width: 1,
-                      color: colorScheme.onPrimaryContainer.withValues(alpha: 0.12),
+                      color: colorScheme.onPrimary.withValues(alpha: 0.16),
                     ),
                     _buildStat(
                       context: context,
@@ -212,19 +206,18 @@ class SummaryCard extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context)
-                .colorScheme
-                .onPrimaryContainer
-              .withValues(alpha: 0.65),
+            color: Theme.of(
+              context,
+            ).colorScheme.onPrimary.withValues(alpha: 0.65),
             letterSpacing: 0.3,
           ),
         ),
         const SizedBox(height: 6),
         Text(
-          formatter.format(amount),
+          context.watch<SecurityProvider>().maskAmount(formatter.format(amount)),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
+            color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
         if (change != null) ...[

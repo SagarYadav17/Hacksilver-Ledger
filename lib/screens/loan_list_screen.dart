@@ -10,7 +10,7 @@ import '../providers/category_provider.dart';
 import '../providers/currency_provider.dart';
 import '../providers/account_provider.dart';
 import '../constants/app_constants.dart';
-import '../widgets/custom_drawer.dart';
+import '../widgets/app_bottom_nav.dart';
 import 'loan_details_screen.dart';
 
 class LoanListScreen extends StatefulWidget {
@@ -44,7 +44,7 @@ class _LoanListScreenState extends State<LoanListScreen> {
             ],
           ),
         ),
-        drawer: const CustomDrawer(currentRoute: '/loans'),
+        bottomNavigationBar: const AppBottomNav(currentRoute: '/loans'),
         body: const TabBarView(
           children: [
             LoanList(type: LoanType.taken),
@@ -68,8 +68,8 @@ class LoanList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<LoanProvider, CurrencyProvider>(
-      builder: (context, provider, currencyProvider, child) {
+    return Consumer3<LoanProvider, CurrencyProvider, TransactionProvider>(
+      builder: (context, provider, currencyProvider, txProvider, child) {
         final currencySymbol =
             AppConstants.currencySymbols[currencyProvider.currency] ??
             currencyProvider.currency;
@@ -80,114 +80,30 @@ class LoanList extends StatelessWidget {
         }
 
         return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
           itemCount: loans.length,
           itemBuilder: (context, index) {
             final loan = loans[index];
-            final progress = loan.amountPaid / loan.amount;
+            final linkedTransactions = txProvider.transactions
+                .where((tx) => tx.loanId == loan.id)
+                .toList();
 
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              clipBehavior: Clip.antiAlias, // For InkWell ripple
-              child: InkWell(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => LoanDetailsScreen(loanId: loan.id!),
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            loan.title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                          if (loan.isClosed)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green[100],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'CLOSED',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Amount: $currencySymbol${loan.amount.toStringAsFixed(0)}',
-                          ),
-                          Text(
-                            'EMI: $currencySymbol${loan.emiAmount.toStringAsFixed(2)}',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: progress.clamp(0.0, 1.0),
-                        backgroundColor: Colors.grey[200],
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          type == LoanType.taken ? Colors.red : Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Paid: $currencySymbol${loan.amountPaid.toStringAsFixed(0)} / $currencySymbol${loan.amount.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          if (!loan.isClosed)
-                            TextButton(
-                              onPressed: () {
-                                _showPaymentDialog(context, loan, provider);
-                              },
-                              child: Text(
-                                type == LoanType.taken
-                                    ? 'PAY EMI'
-                                    : 'RECEIVE EMI',
-                              ),
-                            ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete_outlined,
-                              color: Colors.grey,
-                            ),
-                            onPressed: () {
-                              provider.deleteLoan(loan.id!);
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
+            return _LoanCard(
+              loan: loan,
+              type: type,
+              currencySymbol: currencySymbol,
+              paymentCount: linkedTransactions.length,
+              onOpen: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => LoanDetailsScreen(loanId: loan.id!),
                   ),
-                ),
-              ),
+                );
+              },
+              onPay: loan.isClosed
+                  ? null
+                  : () => _showPaymentDialog(context, loan, provider),
+              onDelete: () => provider.deleteLoan(loan.id!),
             );
           },
         );
@@ -375,6 +291,173 @@ class LoanList extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _LoanCard extends StatelessWidget {
+  final Loan loan;
+  final LoanType type;
+  final String currencySymbol;
+  final int paymentCount;
+  final VoidCallback onOpen;
+  final VoidCallback? onPay;
+  final VoidCallback onDelete;
+
+  const _LoanCard({
+    required this.loan,
+    required this.type,
+    required this.currencySymbol,
+    required this.paymentCount,
+    required this.onOpen,
+    required this.onPay,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = type == LoanType.taken ? Colors.deepOrange : Colors.teal;
+    final progress = loan.amount <= 0 ? 0.0 : loan.amountPaid / loan.amount;
+    final remaining = (loan.amount - loan.amountPaid).clamp(0.0, loan.amount);
+    final clampedProgress = progress.clamp(0.0, 1.0).toDouble();
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      color: accent.withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: accent.withValues(alpha: 0.18)),
+      ),
+      child: InkWell(
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: accent.withValues(alpha: 0.14),
+                    child: Icon(
+                      type == LoanType.taken
+                          ? Icons.south_west_rounded
+                          : Icons.north_east_rounded,
+                      color: accent,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          loan.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          '$paymentCount EMI${paymentCount == 1 ? '' : 's'} logged',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _StatusPill(
+                    label: loan.isClosed ? 'Closed' : 'Active',
+                    color: loan.isClosed ? Colors.green : accent,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                '$currencySymbol${remaining.toStringAsFixed(0)} left',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'of $currencySymbol${loan.amount.toStringAsFixed(0)} • EMI $currencySymbol${loan.emiAmount.toStringAsFixed(2)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  value: clampedProgress,
+                  minHeight: 10,
+                  backgroundColor: Colors.white,
+                  valueColor: AlwaysStoppedAnimation<Color>(accent),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Text(
+                    '${(clampedProgress * 100).toStringAsFixed(0)}% paid',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (onPay != null)
+                    TextButton(
+                      onPressed: onPay,
+                      child: Text(
+                        type == LoanType.taken ? 'Pay EMI' : 'Receive EMI',
+                      ),
+                    ),
+                  IconButton(
+                    tooltip: 'Delete loan',
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    color: Colors.grey.shade600,
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }

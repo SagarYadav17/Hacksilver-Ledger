@@ -40,6 +40,7 @@ class DatabaseService {
     await _createRecurringTransactionsTable(db);
     await _createLoansTable(db);
     await _createSyncMetadataTable(db);
+    await _createSyncHistoryTable(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -50,6 +51,9 @@ class DatabaseService {
       await _addSyncColumns(db, DbConstants.tableRecurringTransactions);
       await _addSyncColumns(db, DbConstants.tableLoans);
       await _createSyncMetadataTable(db);
+    }
+    if (oldVersion < 3) {
+      await _createSyncHistoryTable(db);
     }
   }
 
@@ -182,6 +186,18 @@ class DatabaseService {
     await db.execute('''
       INSERT INTO ${DbConstants.tableSyncMetadata} (${DbConstants.columnId}, ${DbConstants.columnSupabaseUrl}, ${DbConstants.columnSupabaseKey}, ${DbConstants.columnLastSyncAt})
       VALUES (1, NULL, NULL, NULL)
+    ''');
+  }
+
+  Future<void> _createSyncHistoryTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ${DbConstants.tableSyncHistory}(
+        ${DbConstants.columnId} INTEGER PRIMARY KEY AUTOINCREMENT,
+        ${DbConstants.columnSyncHistoryStatus} TEXT NOT NULL,
+        ${DbConstants.columnSyncHistorySyncedCount} INTEGER NOT NULL,
+        ${DbConstants.columnSyncHistoryMessage} TEXT,
+        ${DbConstants.columnSyncHistoryCreatedAt} TEXT NOT NULL
+      )
     ''');
   }
 
@@ -562,6 +578,29 @@ class DatabaseService {
       },
       where: '${DbConstants.columnId} = ?',
       whereArgs: [1],
+    );
+  }
+
+  Future<void> insertSyncHistory({
+    required bool success,
+    required int syncedCount,
+    String? message,
+  }) async {
+    final db = await database;
+    await db.insert(DbConstants.tableSyncHistory, {
+      DbConstants.columnSyncHistoryStatus: success ? 'success' : 'failed',
+      DbConstants.columnSyncHistorySyncedCount: syncedCount,
+      DbConstants.columnSyncHistoryMessage: message,
+      DbConstants.columnSyncHistoryCreatedAt: DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getSyncHistory({int limit = 5}) async {
+    final db = await database;
+    return db.query(
+      DbConstants.tableSyncHistory,
+      orderBy: '${DbConstants.columnSyncHistoryCreatedAt} DESC',
+      limit: limit,
     );
   }
 

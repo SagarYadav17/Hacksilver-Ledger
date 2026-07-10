@@ -45,22 +45,36 @@ class RecurringTransactionListScreen extends StatelessWidget {
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: tx.isActive
+                    ? null
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: Color(
                       category.colorValue,
                     ).withValues(alpha: 0.2),
                     child: Icon(
-                      categoryIconData(category.iconCode, fontFamily: category.fontFamily, fontPackage: category.fontPackage),
+                      categoryIconData(
+                        category.iconCode,
+                        fontFamily: category.fontFamily,
+                        fontPackage: category.fontPackage,
+                      ),
                       color: Color(category.colorValue),
                     ),
                   ),
                   title: Text(
                     tx.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: tx.isActive
+                          ? null
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   subtitle: Text(
-                    '${tx.frequency.toString().split('.').last.toUpperCase()} • Next: ${DateFormat.MMMd().format(tx.nextDueDate)}',
+                    tx.isActive
+                        ? '${tx.frequency.toString().split('.').last.toUpperCase()} • Next: ${DateFormat.MMMd().format(tx.nextDueDate)}'
+                        : 'Paused • no entries will be generated',
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -72,6 +86,12 @@ class RecurringTransactionListScreen extends StatelessWidget {
                           color: isExpense ? Colors.red : Colors.green,
                           fontSize: 16,
                         ),
+                      ),
+                      Switch(
+                        value: tx.isActive,
+                        onChanged: (_) {
+                          provider.toggleRecurringTransaction(tx);
+                        },
                       ),
                       IconButton(
                         icon: const Icon(

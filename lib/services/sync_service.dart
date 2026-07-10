@@ -36,15 +36,18 @@ class SyncService {
 
     // Sanitize and validate
     final sanitizedUrl = urlValidation.value;
-    
+
     await Supabase.initialize(
       url: sanitizedUrl,
-      anonKey: anonKey.trim(),
+      publishableKey: anonKey.trim(),
     );
     _supabase = Supabase.instance.client;
 
     // Store credentials securely
-    await SecureStorageService.storeSupabaseCredentials(sanitizedUrl, anonKey.trim());
+    await SecureStorageService.storeSupabaseCredentials(
+      sanitizedUrl,
+      anonKey.trim(),
+    );
   }
 
   /// Dispose Supabase client
@@ -109,10 +112,9 @@ class SyncService {
       tableName: 'categories',
       fetchLocal: () => _dbService.getCategoriesForSync(),
       toSyncMap: (category) => category.toSyncMap(),
-      markAsSynced: (localId, syncId) => 
+      markAsSynced: (localId, syncId) =>
           _dbService.markAsSynced('categories', localId, syncId),
-      markAsFailed: (localId) => 
-          _dbService.markAsFailed('categories', localId),
+      markAsFailed: (localId) => _dbService.markAsFailed('categories', localId),
     );
   }
 
@@ -121,10 +123,9 @@ class SyncService {
       tableName: 'accounts',
       fetchLocal: () => _dbService.getAccountsForSync(),
       toSyncMap: (account) => account.toSyncMap(),
-      markAsSynced: (localId, syncId) => 
+      markAsSynced: (localId, syncId) =>
           _dbService.markAsSynced('accounts', localId, syncId),
-      markAsFailed: (localId) => 
-          _dbService.markAsFailed('accounts', localId),
+      markAsFailed: (localId) => _dbService.markAsFailed('accounts', localId),
     );
   }
 
@@ -133,9 +134,9 @@ class SyncService {
       tableName: 'transactions',
       fetchLocal: () => _dbService.getTransactionsForSync(),
       toSyncMap: (transaction) => transaction.toSyncMap(),
-      markAsSynced: (localId, syncId) => 
+      markAsSynced: (localId, syncId) =>
           _dbService.markAsSynced('transactions', localId, syncId),
-      markAsFailed: (localId) => 
+      markAsFailed: (localId) =>
           _dbService.markAsFailed('transactions', localId),
     );
   }
@@ -145,10 +146,9 @@ class SyncService {
       tableName: 'loans',
       fetchLocal: () => _dbService.getLoansForSync(),
       toSyncMap: (loan) => loan.toSyncMap(),
-      markAsSynced: (localId, syncId) => 
+      markAsSynced: (localId, syncId) =>
           _dbService.markAsSynced('loans', localId, syncId),
-      markAsFailed: (localId) => 
-          _dbService.markAsFailed('loans', localId),
+      markAsFailed: (localId) => _dbService.markAsFailed('loans', localId),
     );
   }
 
@@ -157,9 +157,9 @@ class SyncService {
       tableName: 'recurring_transactions',
       fetchLocal: () => _dbService.getRecurringTransactionsForSync(),
       toSyncMap: (rt) => rt.toSyncMap(),
-      markAsSynced: (localId, syncId) => 
+      markAsSynced: (localId, syncId) =>
           _dbService.markAsSynced('recurring_transactions', localId, syncId),
-      markAsFailed: (localId) => 
+      markAsFailed: (localId) =>
           _dbService.markAsFailed('recurring_transactions', localId),
     );
   }
@@ -182,12 +182,9 @@ class SyncService {
       for (final item in items) {
         try {
           final map = toSyncMap(item);
-          
+
           // Use upsert to handle both inserts and updates
-          await _supabase!.from(tableName).upsert(
-            map,
-            onConflict: 'id',
-          );
+          await _supabase!.from(tableName).upsert(map, onConflict: 'id');
 
           // Mark as synced locally
           final localId = (item as dynamic).id as int?;
@@ -219,11 +216,11 @@ class SyncService {
     final loans = await _dbService.getLoansForSync();
     final recurring = await _dbService.getRecurringTransactionsForSync();
 
-    return categories.length + 
-           accounts.length + 
-           transactions.length + 
-           loans.length + 
-           recurring.length;
+    return categories.length +
+        accounts.length +
+        transactions.length +
+        loans.length +
+        recurring.length;
   }
 }
 
@@ -235,17 +232,15 @@ class SyncResult {
   final List<String>? errors;
   final String? errorMessage;
 
-  SyncResult.success({
-    required this.syncedCount,
-    this.details,
-    this.errors,
-  }) : success = true, errorMessage = null;
+  SyncResult.success({required this.syncedCount, this.details, this.errors})
+    : success = true,
+      errorMessage = null;
 
   SyncResult.error(this.errorMessage)
-      : success = false,
-        syncedCount = 0,
-        details = null,
-        errors = null;
+    : success = false,
+      syncedCount = 0,
+      details = null,
+      errors = null;
 
   bool get hasErrors => errors != null && errors!.isNotEmpty;
 }
@@ -256,11 +251,7 @@ class TableSyncResult {
   final int syncedCount;
   final String? error;
 
-  TableSyncResult.success(this.syncedCount)
-      : success = true,
-        error = null;
+  TableSyncResult.success(this.syncedCount) : success = true, error = null;
 
-  TableSyncResult.error(this.error)
-      : success = false,
-        syncedCount = 0;
+  TableSyncResult.error(this.error) : success = false, syncedCount = 0;
 }

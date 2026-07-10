@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/account_provider.dart';
+import '../providers/currency_provider.dart';
+import '../providers/security_provider.dart';
 import '../models/account.dart';
 import 'add_account_screen.dart';
-
-import '../widgets/custom_drawer.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class AccountListScreen extends StatelessWidget {
   const AccountListScreen({super.key});
@@ -13,85 +15,276 @@ class AccountListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Accounts')),
-      drawer: const CustomDrawer(currentRoute: '/accounts'),
-      body: Consumer<AccountProvider>(
-        builder: (context, provider, child) {
+      bottomNavigationBar: const AppBottomNav(currentRoute: '/accounts'),
+      body: Consumer2<AccountProvider, CurrencyProvider>(
+        builder: (context, provider, currencyProvider, child) {
           final accounts = provider.accounts;
+          final colorScheme = Theme.of(context).colorScheme;
+          final securityProvider = context.watch<SecurityProvider>();
+          final formatter = NumberFormat.currency(
+            symbol: _getCurrencySymbol(currencyProvider.currency),
+            decimalDigits: 2,
+          );
 
           if (accounts.isEmpty) {
-            return const Center(child: Text('No accounts added yet'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 56,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No accounts yet',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Add your first wallet, bank, or card to start tracking balances.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/add-account'),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add account'),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
-          return ListView.builder(
-            itemCount: accounts.length,
-            itemBuilder: (context, index) {
-              final account = accounts[index];
-              return Dismissible(
-                key: ValueKey(account.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(Icons.delete_outlined, color: Colors.white),
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+            children: [
+              Card(
+                elevation: 0,
+                color: colorScheme.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                confirmDismiss: (direction) async {
-                  return await showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Delete Account?'),
-                      content: const Text(
-                        'Are you sure you want to delete this account? This will not delete associated transactions but they will be unlinked.',
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Total balance',
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: colorScheme.onPrimary.withValues(
+                                      alpha: 0.72,
+                                    ),
+                                    letterSpacing: 0.4,
+                                  ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: colorScheme.onPrimary.withValues(
+                              alpha: 0.78,
+                            ),
+                          ),
+                        ],
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text('No'),
+                      const SizedBox(height: 10),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          securityProvider.maskAmount(
+                            formatter.format(provider.totalBalance),
+                          ),
+                          style: Theme.of(context).textTheme.displayMedium
+                              ?.copyWith(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -1,
+                              ),
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          child: const Text('Yes'),
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton.tonalIcon(
+                        onPressed: () => _moveMoney(context, accounts.length),
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        label: const Text('Move money'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.onPrimary.withValues(
+                            alpha: 0.14,
+                          ),
+                          foregroundColor: colorScheme.onPrimary,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Accounts',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              for (final account in accounts)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Dismissible(
+                    key: ValueKey(account.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      decoration: BoxDecoration(
+                        color: colorScheme.error,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Icon(
+                        Icons.delete_outlined,
+                        color: colorScheme.onError,
+                      ),
                     ),
-                  );
-                },
-                onDismissed: (direction) {
-                  provider.deleteAccount(account.id!);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${account.name} deleted')),
-                  );
-                },
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    child: Icon(
-                      _getIconForType(account.type),
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    confirmDismiss: (direction) async {
+                      return await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Delete Account?'),
+                              content: const Text(
+                                'Are you sure you want to delete this account? This will not delete associated transactions but they will be unlinked.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(false),
+                                  child: const Text('No'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(true),
+                                  child: const Text('Yes'),
+                                ),
+                              ],
+                            ),
+                          ) ??
+                          false;
+                    },
+                    onDismissed: (direction) {
+                      provider.deleteAccount(account.id!);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${account.name} deleted')),
+                      );
+                    },
+                    child: Card(
+                      elevation: 0,
+                      margin: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(
+                          color: colorScheme.outlineVariant,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(18),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) =>
+                                  AddAccountScreen(account: account),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(
+                                  _getIconForType(account.type),
+                                  color: colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      account.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _accountTypeLabel(account.type),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    securityProvider.maskAmount(
+                                      formatter.format(account.balance),
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: _getBalanceColor(
+                                            account.balance,
+                                          ),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  title: Text(account.name),
-                  subtitle: Text(account.type.toString().split('.').last),
-                  trailing: Text(
-                    '₹${account.balance.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  onTap: () {
-                    // Navigate to edit screen (AddAccountScreen acts as edit too)
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (ctx) => AddAccountScreen(account: account),
-                      ),
-                    );
-                  },
                 ),
-              );
-            },
+            ],
           );
         },
       ),
@@ -104,6 +297,17 @@ class AccountListScreen extends StatelessWidget {
     );
   }
 
+  void _moveMoney(BuildContext context, int accountCount) {
+    if (accountCount < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add another account to move money.')),
+      );
+      return;
+    }
+
+    Navigator.of(context).pushNamed('/add-transaction');
+  }
+
   IconData _getIconForType(AccountType type) {
     switch (type) {
       case AccountType.cash:
@@ -114,6 +318,39 @@ class AccountListScreen extends StatelessWidget {
         return Icons.credit_card_outlined;
       case AccountType.other:
         return Icons.account_balance_wallet_outlined;
+    }
+  }
+
+  String _accountTypeLabel(AccountType type) {
+    switch (type) {
+      case AccountType.cash:
+        return 'Cash';
+      case AccountType.bank:
+        return 'Bank';
+      case AccountType.creditCard:
+        return 'Credit card';
+      case AccountType.other:
+        return 'Other';
+    }
+  }
+
+  Color _getBalanceColor(double balance) {
+    if (balance >= 0) return Colors.green.shade700;
+    return Colors.red.shade700;
+  }
+
+  String _getCurrencySymbol(String currencyCode) {
+    switch (currencyCode) {
+      case 'INR':
+        return '₹';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      default:
+        return currencyCode;
     }
   }
 }

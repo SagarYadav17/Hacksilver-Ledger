@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Outfit:wght@400;500;600;700;900&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0" rel="stylesheet">
+<style>
+body{margin:0;background:#eceae4;font-family:Roboto,system-ui,sans-serif}
+a{color:#006A60}a:hover{color:#00504A}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;line-height:1;user-select:none;display:inline-block}
+.msf{font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1;font-weight:400;line-height:1;user-select:none;display:inline-block}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px;max-width:436px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:500 12px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.7)}
+.dv-note{font:400 11px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5);max-width:412px;margin:0}
+.dv-opt:target .dv-oid{background:#006A60;color:#fff}
+.dv-next{margin:26px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t0" style="border-bottom:1px solid rgba(0,0,0,.08)">
+  <div style="max-width:720px;display:flex;flex-direction:column;gap:10px">
+    <div style="font:700 20px/1.2 Roboto,sans-serif;color:#1a1a1a">Hacksilver Ledger — redesign concept</div>
+    <p class="dv-note" style="max-width:720px">Full-app concept from the feature map, grounded in the Flutter repo: <b>Outfit</b> type and the app's teal M3 seed (ColorScheme.fromSeed) are kept, INR default per CurrencyProvider. Current features plus wanted-next (charts, transaction sheet, fast add, EMI timeline, sync modes, app lock). Biggest change: the NavigationDrawer becomes a 5-item bottom nav (Home · Activity · Loans · Accounts · More — Categories, Recurring, Sync, Settings under More). Offline-first — sync framed as optional. Scroll right for all screens; dark variants at the end. Tweaks: toggle notes / dark row.</p>
+  </div>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">All screens — light</span></div>
+<div class="dv-opts">
+
+<!-- ═══════════ 1a DASHBOARD ═══════════ -->
+<div class="dv-opt" id="1a" data-screen-label="Dashboard">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Dashboard</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 4px">
+    <div>
+      <div style="font-size:13px;color:#3F4946">Tuesday, 7 July</div>
+      <div style="font-size:22px;font-weight:500;color:#171D1B">Good morning</div>
+    </div>
+    <div style="width:40px;height:40px;border-radius:50%;background:#CDE8E1;display:flex;align-items:center;justify-content:center;color:#00201C;font-weight:500;font-size:16px">A</div>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:12px 16px 8px">
+    <div style="background:#006A60;border-radius:24px;padding:20px;color:#fff">
+      <div style="font-size:13px;opacity:.8">Available balance</div>
+      <div style="font-size:36px;font-weight:600;letter-spacing:-.5px;margin:2px 0 14px">₹1,84,250</div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1;background:rgba(255,255,255,.14);border-radius:14px;padding:10px 12px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;opacity:.85"><span class="ms" style="font-size:16px">arrow_downward</span>Income · Jul</div>
+          <div style="font-size:17px;font-weight:500;margin-top:2px">₹92,000</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,.14);border-radius:14px;padding:10px 12px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;opacity:.85"><span class="ms" style="font-size:16px">arrow_upward</span>Expense · Jul</div>
+          <div style="font-size:17px;font-weight:500;margin-top:2px">₹57,340</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#006A60">remove</span><span style="font-size:12px;font-weight:500;color:#171D1B">Expense</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#006A60">add</span><span style="font-size:12px;font-weight:500;color:#171D1B">Income</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#006A60">swap_horiz</span><span style="font-size:12px;font-weight:500;color:#171D1B">Transfer</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#006A60">event_repeat</span><span style="font-size:12px;font-weight:500;color:#171D1B">EMI</span></div>
+    </div>
+    <div style="background:#E8EFEB;border-radius:20px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:500;color:#171D1B">Cashflow</span>
+        <span style="font-size:12px;color:#3F4946">6 months</span>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:14px;height:84px">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:44px;border-radius:4px;background:#006A60"></div><div style="width:9px;height:30px;border-radius:4px;background:#BEC9C4"></div></div><span style="font-size:10px;color:#3F4946">Feb</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:50px;border-radius:4px;background:#006A60"></div><div style="width:9px;height:42px;border-radius:4px;background:#BEC9C4"></div></div><span style="font-size:10px;color:#3F4946">Mar</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:46px;border-radius:4px;background:#006A60"></div><div style="width:9px;height:52px;border-radius:4px;background:#BEC9C4"></div></div><span style="font-size:10px;color:#3F4946">Apr</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:58px;border-radius:4px;background:#006A60"></div><div style="width:9px;height:38px;border-radius:4px;background:#BEC9C4"></div></div><span style="font-size:10px;color:#3F4946">May</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:52px;border-radius:4px;background:#006A60"></div><div style="width:9px;height:44px;border-radius:4px;background:#BEC9C4"></div></div><span style="font-size:10px;color:#3F4946">Jun</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:64px;border-radius:4px;background:#006A60"></div><div style="width:9px;height:40px;border-radius:4px;background:#BEC9C4"></div></div><span style="font-size:10px;font-weight:500;color:#171D1B">Jul</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px 8px">
+        <span style="font-size:14px;font-weight:500;color:#171D1B">Recent</span>
+        <span style="font-size:12px;font-weight:500;color:#006A60">See all</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 2px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#FFE0B2;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#7A4F00">restaurant</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">Lunch — Sagar Ratna</div><div style="font-size:12px;color:#3F4946">Food · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#8C1D18">−₹420</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 2px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#006A60">work</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">Salary — July</div><div style="font-size:12px;color:#3F4946">Income · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#006A60">+₹85,000</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 2px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#C7E7FF;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#00658F">swap_horiz</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">To Cash wallet</div><div style="font-size:12px;color:#3F4946">Transfer · HDFC → Cash</div></div>
+        <div style="font-size:15px;font-weight:500;color:#00658F">₹5,000</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;background:#E8EFEB;padding:10px 4px 6px">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:56px;height:28px;border-radius:14px;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="msf" style="font-size:20px;color:#00201C">home</span></div><span style="font-size:11px;font-weight:600;color:#171D1B">Home</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">receipt_long</span></div><span style="font-size:11px;color:#3F4946">Activity</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">handshake</span></div><span style="font-size:11px;color:#3F4946">Loans</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">wallet</span></div><span style="font-size:11px;color:#3F4946">Accounts</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">more_horiz</span></div><span style="font-size:11px;color:#3F4946">More</span></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Balance hero + always-visible quick actions (was: empty-state only). Cashflow bars and recent list bring the wanted analytics onto Home without crowding it.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1b TRANSACTIONS ═══════════ -->
+<div class="dv-opt" id="1b" data-screen-label="Transactions">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Transactions</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8;position:relative">
+  <div style="padding:12px 16px 0"><div style="font-size:22px;font-weight:500;color:#171D1B">Activity</div></div>
+  <div style="padding:12px 16px 10px">
+    <div style="display:flex;align-items:center;gap:10px;background:#E8EFEB;border-radius:28px;padding:13px 16px">
+      <span class="ms" style="font-size:20px;color:#3F4946">search</span>
+      <span style="font-size:15px;color:#3F4946">Search notes, amounts, categories</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;padding:0 16px 12px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:5px;background:#CDE8E1;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:500;color:#00201C"><span class="ms" style="font-size:16px">check</span>All</div>
+    <div style="border:1px solid #BEC9C4;border-radius:8px;padding:7px 12px;font-size:13px;color:#3F4946">Income</div>
+    <div style="border:1px solid #BEC9C4;border-radius:8px;padding:7px 12px;font-size:13px;color:#3F4946">Expense</div>
+    <div style="border:1px solid #BEC9C4;border-radius:8px;padding:7px 12px;font-size:13px;color:#3F4946">Transfer</div>
+    <div style="display:flex;align-items:center;gap:4px;border:1px solid #BEC9C4;border-radius:8px;padding:7px 12px;font-size:13px;color:#3F4946">Jul<span class="ms" style="font-size:16px">arrow_drop_down</span></div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:0 16px">
+    <div style="display:flex;justify-content:space-between;padding:8px 2px 4px"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">TODAY</span><span style="font-size:12px;color:#3F4946">−₹1,090</span></div>
+    <div style="background:#fff;border-radius:16px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#FFE0B2;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#7A4F00">restaurant</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">Lunch — Sagar Ratna</div><div style="font-size:12px;color:#3F4946">Food · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#8C1D18">−₹420</div>
+      </div>
+      <div style="height:1px;background:#E8EFEB;margin:0 14px"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#D9E2FF;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#3B5BA9">local_taxi</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">Auto to office</div><div style="font-size:12px;color:#3F4946">Travel · Cash</div></div>
+        <div style="font-size:15px;font-weight:500;color:#8C1D18">−₹120</div>
+      </div>
+      <div style="height:1px;background:#E8EFEB;margin:0 14px"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#E5DEFF;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#5B4FA9">shopping_bag</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">Groceries — BigBasket</div><div style="font-size:12px;color:#3F4946">Household · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#8C1D18">−₹550</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:14px 2px 4px"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">YESTERDAY</span><span style="font-size:12px;color:#3F4946">+₹84,180</span></div>
+    <div style="background:#fff;border-radius:16px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#006A60">work</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">Salary — July</div><div style="font-size:12px;color:#3F4946">Income · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#006A60">+₹85,000</div>
+      </div>
+      <div style="height:1px;background:#E8EFEB;margin:0 14px"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#C7E7FF;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#00658F">swap_horiz</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">To Cash wallet</div><div style="font-size:12px;color:#3F4946">Transfer · HDFC → Cash</div></div>
+        <div style="font-size:15px;font-weight:500;color:#00658F">₹5,000</div>
+      </div>
+      <div style="height:1px;background:#E8EFEB;margin:0 14px"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#FFD8E4;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#8E4963">movie</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#171D1B">PVR — weekend show</div><div style="font-size:12px;color:#3F4946">Entertainment · Credit card</div></div>
+        <div style="font-size:15px;font-weight:500;color:#8C1D18">−₹820</div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;right:16px;bottom:78px;width:56px;height:56px;border-radius:16px;background:#9EF2E4;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,32,28,.25)"><span class="ms" style="font-size:26px;color:#00201C">add</span></div>
+  <div style="display:flex;background:#E8EFEB;padding:10px 4px 6px">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">home</span></div><span style="font-size:11px;color:#3F4946">Home</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:56px;height:28px;border-radius:14px;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="msf" style="font-size:20px;color:#00201C">receipt_long</span></div><span style="font-size:11px;font-weight:600;color:#171D1B">Activity</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">handshake</span></div><span style="font-size:11px;color:#3F4946">Loans</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">wallet</span></div><span style="font-size:11px;color:#3F4946">Accounts</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">more_horiz</span></div><span style="font-size:11px;color:#3F4946">More</span></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Adds the missing Transfer filter, search, per-day subtotals, and date-range chip. Cards group by day to cut visual noise vs one flat list.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1c DETAIL SHEET ═══════════ -->
+<div class="dv-opt" id="1c" data-screen-label="Transaction detail sheet">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Transaction details sheet</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8;position:relative">
+  <div style="padding:12px 16px 0;opacity:.5"><div style="font-size:22px;font-weight:500;color:#171D1B">Activity</div></div>
+  <div style="padding:12px 16px;opacity:.5">
+    <div style="background:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;border-radius:50%;background:#FFE0B2"></div>
+      <div style="flex:1"><div style="height:12px;width:140px;border-radius:6px;background:#E8EFEB"></div><div style="height:9px;width:90px;border-radius:5px;background:#E8EFEB;margin-top:6px"></div></div>
+    </div>
+  </div>
+  <div style="position:absolute;inset:0;background:rgba(23,29,27,.45)"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;background:#F4FBF8;border-radius:28px 28px 0 0;padding:8px 20px 24px;display:flex;flex-direction:column;gap:16px">
+    <div style="width:32px;height:4px;border-radius:2px;background:#BEC9C4;margin:6px auto 0"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:6px">
+      <div style="width:52px;height:52px;border-radius:50%;background:#FFE0B2;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:26px;color:#7A4F00">restaurant</span></div>
+      <div style="font-size:32px;font-weight:600;color:#8C1D18;letter-spacing:-.5px">−₹420</div>
+      <div style="font-size:15px;color:#171D1B">Lunch — Sagar Ratna</div>
+      <div style="display:flex;gap:6px">
+        <span style="background:#FFE0B2;color:#7A4F00;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:500">Food</span>
+        <span style="background:#E8EFEB;color:#3F4946;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:500">Expense</span>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:4px 16px">
+      <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #E8EFEB"><span style="font-size:13px;color:#3F4946">Account</span><span style="font-size:13px;font-weight:500;color:#171D1B">HDFC Bank</span></div>
+      <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #E8EFEB"><span style="font-size:13px;color:#3F4946">Date</span><span style="font-size:13px;font-weight:500;color:#171D1B">Today, 1:12 pm</span></div>
+      <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #E8EFEB"><span style="font-size:13px;color:#3F4946">Original amount</span><span style="font-size:13px;font-weight:500;color:#171D1B">$5.00 USD</span></div>
+      <div style="display:flex;justify-content:space-between;padding:12px 0"><span style="font-size:13px;color:#3F4946">Note</span><span style="font-size:13px;font-weight:500;color:#171D1B">Team lunch, split later</span></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #BEC9C4;border-radius:24px;padding:12px 0;font-size:14px;font-weight:500;color:#006A60"><span class="ms" style="font-size:18px">content_copy</span>Duplicate</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #BEC9C4;border-radius:24px;padding:12px 0;font-size:14px;font-weight:500;color:#8C1D18"><span class="ms" style="font-size:18px">delete</span>Delete</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#006A60;border-radius:24px;padding:12px 0;font-size:14px;font-weight:500;color:#fff"><span class="ms" style="font-size:18px">edit</span>Edit</div>
+    </div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Wanted-next: a details sheet so tapping a row no longer jumps straight into edit. Shows FX original amount and note; duplicate is the fast-add shortcut.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1d ADD TRANSACTION ═══════════ -->
+<div class="dv-opt" id="1d" data-screen-label="Add transaction">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Add transaction — fast flow</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px">
+    <span class="ms" style="font-size:24px;color:#171D1B;padding:8px">close</span>
+    <span style="font-size:18px;font-weight:500;color:#171D1B">New entry</span>
+  </div>
+  <div style="display:flex;gap:0;margin:4px 16px;border:1px solid #BEC9C4;border-radius:24px;overflow:hidden">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#CDE8E1;padding:10px 0;font-size:13px;font-weight:500;color:#00201C"><span class="ms" style="font-size:16px">check</span>Expense</div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 0;font-size:13px;color:#3F4946;border-left:1px solid #BEC9C4">Income</div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 0;font-size:13px;color:#3F4946;border-left:1px solid #BEC9C4">Transfer</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;padding:26px 16px 10px">
+    <div style="font-size:52px;font-weight:600;color:#171D1B;letter-spacing:-1px">₹420<span style="color:#BEC9C4">|</span></div>
+    <div style="display:flex;align-items:center;gap:4px;font-size:13px;color:#3F4946;margin-top:4px">INR · HDFC Bank<span class="ms" style="font-size:16px">arrow_drop_down</span></div>
+  </div>
+  <div style="padding:8px 16px 4px"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">RECENT & TEMPLATES</span></div>
+  <div style="display:flex;gap:8px;padding:4px 16px 12px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:6px;background:#E8EFEB;border-radius:10px;padding:8px 12px;font-size:13px;color:#171D1B;white-space:nowrap"><span class="ms" style="font-size:16px;color:#7A4F00">restaurant</span>Lunch ₹420</div>
+    <div style="display:flex;align-items:center;gap:6px;background:#E8EFEB;border-radius:10px;padding:8px 12px;font-size:13px;color:#171D1B;white-space:nowrap"><span class="ms" style="font-size:16px;color:#3B5BA9">local_taxi</span>Auto ₹120</div>
+    <div style="display:flex;align-items:center;gap:6px;background:#E8EFEB;border-radius:10px;padding:8px 12px;font-size:13px;color:#171D1B;white-space:nowrap"><span class="ms" style="font-size:16px;color:#00658F">local_gas_station</span>Fuel ₹2,000</div>
+  </div>
+  <div style="padding:4px 16px 4px"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">CATEGORY</span></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:4px 16px;flex:1;align-content:start;overflow:hidden">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;background:#FFE0B2;border-radius:16px;padding:12px 4px;outline:2px solid #7A4F00"><span class="ms" style="font-size:22px;color:#7A4F00">restaurant</span><span style="font-size:11px;font-weight:500;color:#171D1B">Food</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#3B5BA9">local_taxi</span><span style="font-size:11px;color:#3F4946">Travel</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#5B4FA9">shopping_bag</span><span style="font-size:11px;color:#3F4946">Household</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#8E4963">movie</span><span style="font-size:11px;color:#3F4946">Fun</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#00658F">bolt</span><span style="font-size:11px;color:#3F4946">Utilities</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#006A60">medical_services</span><span style="font-size:11px;color:#3F4946">Health</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#7A4F00">school</span><span style="font-size:11px;color:#3F4946">Education</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;background:#E8EFEB;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#3F4946">more_horiz</span><span style="font-size:11px;color:#3F4946">More</span></div>
+  </div>
+  <div style="display:flex;gap:8px;padding:10px 16px 6px">
+    <div style="display:flex;align-items:center;gap:6px;border:1px solid #BEC9C4;border-radius:24px;padding:10px 14px;font-size:13px;color:#3F4946"><span class="ms" style="font-size:16px">calendar_today</span>Today</div>
+    <div style="display:flex;align-items:center;gap:6px;border:1px solid #BEC9C4;border-radius:24px;padding:10px 14px;font-size:13px;color:#3F4946"><span class="ms" style="font-size:16px">sticky_note_2</span>Note</div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#006A60;border-radius:24px;padding:10px 0;font-size:14px;font-weight:500;color:#fff">Save</div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Fast-add: templates and recents fill amount + category in one tap; category grid replaces a dropdown. Date and note are optional chips, not form fields.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1e LOANS ═══════════ -->
+<div class="dv-opt" id="1e" data-screen-label="Loans">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Loans</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="padding:12px 16px 8px"><div style="font-size:22px;font-weight:500;color:#171D1B">Loans</div></div>
+  <div style="display:flex;margin:4px 16px 12px;border:1px solid #BEC9C4;border-radius:24px;overflow:hidden">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#CDE8E1;padding:10px 0;font-size:13px;font-weight:500;color:#00201C"><span class="ms" style="font-size:16px">check</span>Borrowed</div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 0;font-size:13px;color:#3F4946;border-left:1px solid #BEC9C4">Lent</div>
+  </div>
+  <div style="display:flex;gap:10px;padding:0 16px 14px">
+    <div style="flex:1;background:#E8EFEB;border-radius:16px;padding:12px 14px"><div style="font-size:12px;color:#3F4946">You owe</div><div style="font-size:20px;font-weight:600;color:#171D1B;margin-top:2px">₹3,12,400</div></div>
+    <div style="flex:1;background:#E8EFEB;border-radius:16px;padding:12px 14px"><div style="font-size:12px;color:#3F4946">Next EMI</div><div style="font-size:20px;font-weight:600;color:#171D1B;margin-top:2px">12 Jul</div></div>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:0 16px">
+    <div style="background:#fff;border-radius:20px;padding:16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:12px;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#006A60">two_wheeler</span></div>
+        <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Bike loan — HDFC</div><div style="font-size:12px;color:#3F4946">EMI ₹4,860 · due 12 Jul</div></div>
+        <span style="background:#CDE8E1;color:#00201C;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600">ACTIVE</span>
+      </div>
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#3F4946;margin-bottom:6px"><span>₹87,480 paid</span><span>₹58,320 left</span></div>
+        <div style="height:8px;border-radius:4px;background:#E8EFEB;overflow:hidden"><div style="width:60%;height:100%;border-radius:4px;background:#006A60"></div></div>
+        <div style="font-size:11px;color:#3F4946;margin-top:6px">18 of 30 EMIs · closes Jul 2027</div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:20px;padding:16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:12px;background:#FFE0B2;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#7A4F00">family_restroom</span></div>
+        <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">From Dad</div><div style="font-size:12px;color:#3F4946">No schedule · pay anytime</div></div>
+        <span style="background:#CDE8E1;color:#00201C;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600">ACTIVE</span>
+      </div>
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#3F4946;margin-bottom:6px"><span>₹30,000 paid</span><span>₹70,000 left</span></div>
+        <div style="height:8px;border-radius:4px;background:#E8EFEB;overflow:hidden"><div style="width:30%;height:100%;border-radius:4px;background:#006A60"></div></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 2px 0"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">CLOSED</span></div>
+    <div style="background:#fff;border-radius:20px;padding:14px 16px;opacity:.65">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:12px;background:#E8EFEB;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#3F4946">smartphone</span></div>
+        <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Phone EMI — Croma</div><div style="font-size:12px;color:#3F4946">₹54,000 · fully repaid Mar 2026</div></div>
+        <span class="ms" style="font-size:20px;color:#006A60">check_circle</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;background:#E8EFEB;padding:10px 4px 6px">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">home</span></div><span style="font-size:11px;color:#3F4946">Home</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">receipt_long</span></div><span style="font-size:11px;color:#3F4946">Activity</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:56px;height:28px;border-radius:14px;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="msf" style="font-size:20px;color:#00201C">handshake</span></div><span style="font-size:11px;font-weight:600;color:#171D1B">Loans</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">wallet</span></div><span style="font-size:11px;color:#3F4946">Accounts</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">more_horiz</span></div><span style="font-size:11px;color:#3F4946">More</span></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Borrowed/Lent segmented control makes the direction distinction explicit (a wanted fix). Progress bars + EMI count give at-a-glance state; closed loans stay visible but recede.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1f LOAN DETAIL ═══════════ -->
+<div class="dv-opt" id="1f" data-screen-label="Loan detail — EMI timeline">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Loan detail — EMI timeline</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px">
+    <span class="ms" style="font-size:24px;color:#171D1B;padding:8px">arrow_back</span>
+    <span style="font-size:18px;font-weight:500;color:#171D1B">Bike loan — HDFC</span>
+    <div style="flex:1"></div>
+    <span class="ms" style="font-size:22px;color:#171D1B;padding:8px">more_vert</span>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:8px 16px">
+    <div style="background:#006A60;border-radius:24px;padding:20px;color:#fff;display:flex;align-items:center;gap:18px">
+      <div style="width:76px;height:76px;border-radius:50%;background:conic-gradient(#9EF2E4 0 60%,rgba(255,255,255,.2) 60% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <div style="width:56px;height:56px;border-radius:50%;background:#006A60;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">60%</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:12px;opacity:.8">Remaining</div>
+        <div style="font-size:28px;font-weight:600;letter-spacing:-.5px">₹58,320</div>
+        <div style="font-size:12px;opacity:.8;margin-top:4px">of ₹1,45,800 · 12 EMIs left</div>
+      </div>
+    </div>
+    <div style="background:#9EF2E4;border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <span class="ms" style="font-size:22px;color:#00201C">notifications_active</span>
+      <div style="flex:1"><div style="font-size:14px;font-weight:500;color:#00201C">EMI #19 due Sat, 12 Jul</div><div style="font-size:12px;color:#00201C;opacity:.75">₹4,860 from HDFC Bank · reminder 2 days before</div></div>
+      <div style="background:#006A60;color:#fff;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:500">Pay</div>
+    </div>
+    <div style="background:#fff;border-radius:20px;padding:16px;flex:1;overflow:hidden">
+      <div style="font-size:14px;font-weight:500;color:#171D1B;margin-bottom:14px">EMI timeline</div>
+      <div style="display:flex;flex-direction:column">
+        <div style="display:flex;gap:12px">
+          <div style="display:flex;flex-direction:column;align-items:center"><span class="msf" style="font-size:20px;color:#006A60">check_circle</span><div style="width:2px;flex:1;background:#CDE8E1"></div></div>
+          <div style="padding-bottom:16px;flex:1;display:flex;justify-content:space-between"><div><div style="font-size:14px;color:#171D1B">EMI #17</div><div style="font-size:12px;color:#3F4946">12 May · HDFC Bank</div></div><div style="font-size:14px;font-weight:500;color:#006A60">₹4,860</div></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="display:flex;flex-direction:column;align-items:center"><span class="msf" style="font-size:20px;color:#006A60">check_circle</span><div style="width:2px;flex:1;background:#CDE8E1"></div></div>
+          <div style="padding-bottom:16px;flex:1;display:flex;justify-content:space-between"><div><div style="font-size:14px;color:#171D1B">EMI #18</div><div style="font-size:12px;color:#3F4946">12 Jun · HDFC Bank</div></div><div style="font-size:14px;font-weight:500;color:#006A60">₹4,860</div></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="display:flex;flex-direction:column;align-items:center"><div style="width:20px;height:20px;border-radius:50%;border:2px solid #006A60;box-sizing:border-box;background:#9EF2E4"></div><div style="width:2px;flex:1;background:#E8EFEB"></div></div>
+          <div style="padding-bottom:16px;flex:1;display:flex;justify-content:space-between"><div><div style="font-size:14px;font-weight:500;color:#171D1B">EMI #19 — due next</div><div style="font-size:12px;color:#3F4946">12 Jul</div></div><div style="font-size:14px;font-weight:500;color:#171D1B">₹4,860</div></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="display:flex;flex-direction:column;align-items:center"><div style="width:20px;height:20px;border-radius:50%;border:2px solid #BEC9C4;box-sizing:border-box"></div></div>
+          <div style="flex:1;display:flex;justify-content:space-between"><div><div style="font-size:14px;color:#3F4946">EMI #20</div><div style="font-size:12px;color:#3F4946">12 Aug</div></div><div style="font-size:14px;color:#3F4946">₹4,860</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding-bottom:8px">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #BEC9C4;border-radius:24px;padding:12px 0;font-size:14px;font-weight:500;color:#006A60"><span class="ms" style="font-size:18px">history</span>History</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #BEC9C4;border-radius:24px;padding:12px 0;font-size:14px;font-weight:500;color:#006A60"><span class="ms" style="font-size:18px">calendar_month</span>Calendar</div>
+    </div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Wanted-next EMI timeline as a vertical stepper: paid → due → upcoming. Next-due banner carries the reminder + one-tap pay (creates the loan-linked transaction).</p></sc-if>
+</div>
+
+<!-- ═══════════ 1g ACCOUNTS ═══════════ -->
+<div class="dv-opt" id="1g" data-screen-label="Accounts">
+<div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Accounts</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:22px;font-weight:500;color:#171D1B">Accounts</div>
+    <span class="ms" style="font-size:22px;color:#171D1B">add</span>
+  </div>
+  <div style="padding:4px 16px 14px">
+    <div style="font-size:13px;color:#3F4946">Across 4 accounts</div>
+    <div style="font-size:32px;font-weight:600;color:#171D1B;letter-spacing:-.5px">₹1,84,250</div>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:0 16px">
+    <div style="background:#fff;border-radius:20px;padding:16px;display:flex;align-items:center;gap:12px">
+      <div style="width:42px;height:42px;border-radius:12px;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#006A60">account_balance</span></div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">HDFC Bank</div><div style="font-size:12px;color:#3F4946">Bank · reconciled 2 Jul</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:16px;font-weight:600;color:#171D1B">₹1,42,300</div>
+        <div style="display:flex;gap:2px;align-items:flex-end"><div style="width:5px;height:8px;background:#CDE8E1;border-radius:2px"></div><div style="width:5px;height:12px;background:#CDE8E1;border-radius:2px"></div><div style="width:5px;height:10px;background:#CDE8E1;border-radius:2px"></div><div style="width:5px;height:15px;background:#006A60;border-radius:2px"></div></div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:20px;padding:16px;display:flex;align-items:center;gap:12px">
+      <div style="width:42px;height:42px;border-radius:12px;background:#FFE0B2;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#7A4F00">payments</span></div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Cash wallet</div><div style="font-size:12px;color:#3F4946">Cash</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:16px;font-weight:600;color:#171D1B">₹6,150</div>
+        <div style="display:flex;gap:2px;align-items:flex-end"><div style="width:5px;height:12px;background:#CDE8E1;border-radius:2px"></div><div style="width:5px;height:9px;background:#CDE8E1;border-radius:2px"></div><div style="width:5px;height:7px;background:#CDE8E1;border-radius:2px"></div><div style="width:5px;height:5px;background:#8C1D18;border-radius:2px"></div></div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:20px;padding:16px;display:flex;align-items:center;gap:12px">
+      <div style="width:42px;height:42px;border-radius:12px;background:#FFD8E4;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#8E4963">credit_card</span></div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Axis credit card</div><div style="font-size:12px;color:#8E4963;font-weight:500">Bill due 18 Jul</div></div>
+      <div style="font-size:16px;font-weight:600;color:#8C1D18">−₹12,840</div>
+    </div>
+    <div style="background:#fff;border-radius:20px;padding:16px;display:flex;align-items:center;gap:12px">
+      <div style="width:42px;height:42px;border-radius:12px;background:#E5DEFF;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#5B4FA9">savings</span></div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Emergency fund</div><div style="font-size:12px;color:#3F4946">Other · needs reconcile</div></div>
+      <div style="font-size:16px;font-weight:600;color:#171D1B">₹48,640</div>
+    </div>
+    <div style="background:#9EF2E4;border-radius:20px;padding:16px;display:flex;align-items:center;gap:12px">
+      <span class="ms" style="font-size:22px;color:#00201C">swap_horiz</span>
+      <div style="flex:1"><div style="font-size:14px;font-weight:500;color:#00201C">Move money</div><div style="font-size:12px;color:#00201C;opacity:.75">Transfer between accounts</div></div>
+      <span class="ms" style="font-size:20px;color:#00201C">chevron_right</span>
+    </div>
+  </div>
+  <div style="display:flex;background:#E8EFEB;padding:10px 4px 6px">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">home</span></div><span style="font-size:11px;color:#3F4946">Home</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">receipt_long</span></div><span style="font-size:11px;color:#3F4946">Activity</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">handshake</span></div><span style="font-size:11px;color:#3F4946">Loans</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:56px;height:28px;border-radius:14px;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="msf" style="font-size:20px;color:#00201C">wallet</span></div><span style="font-size:11px;font-weight:600;color:#171D1B">Accounts</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#3F4946">more_horiz</span></div><span style="font-size:11px;color:#3F4946">More</span></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Total on top, per-account trend sparklines, reconcile state, credit-card bill callout — the wanted account-health layer. Transfer promoted to a first-class action.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1h CATEGORIES ═══════════ -->
+<div class="dv-opt" id="1h" data-screen-label="Categories">
+<div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Categories</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px">
+    <span class="ms" style="font-size:24px;color:#171D1B;padding:8px">arrow_back</span>
+    <span style="font-size:18px;font-weight:500;color:#171D1B">Categories</span>
+    <div style="flex:1"></div>
+    <span class="ms" style="font-size:22px;color:#171D1B;padding:8px">add</span>
+  </div>
+  <div style="display:flex;margin:4px 16px 12px;border:1px solid #BEC9C4;border-radius:24px;overflow:hidden">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#CDE8E1;padding:10px 0;font-size:13px;font-weight:500;color:#00201C"><span class="ms" style="font-size:16px">check</span>Expense</div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 0;font-size:13px;color:#3F4946;border-left:1px solid #BEC9C4">Income</div>
+  </div>
+  <div style="padding:0 16px 6px"><span style="font-size:12px;color:#3F4946">This month · drag to reorder</span></div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:8px;padding:0 16px">
+    <div style="background:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px">
+      <span class="ms" style="font-size:18px;color:#BEC9C4">drag_indicator</span>
+      <div style="width:38px;height:38px;border-radius:50%;background:#FFE0B2;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:19px;color:#7A4F00">restaurant</span></div>
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:14px;font-weight:500;color:#171D1B">Food</span><span style="font-size:13px;color:#171D1B">₹18,240</span></div>
+      <div style="height:6px;border-radius:3px;background:#E8EFEB"><div style="width:82%;height:100%;border-radius:3px;background:#7A4F00"></div></div>
+      <div style="font-size:11px;color:#3F4946;margin-top:4px">64 entries · 32% of spend</div></div>
+      <span class="ms" style="font-size:20px;color:#3F4946">more_vert</span>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px">
+      <span class="ms" style="font-size:18px;color:#BEC9C4">drag_indicator</span>
+      <div style="width:38px;height:38px;border-radius:50%;background:#E5DEFF;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:19px;color:#5B4FA9">shopping_bag</span></div>
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:14px;font-weight:500;color:#171D1B">Household</span><span style="font-size:13px;color:#171D1B">₹12,600</span></div>
+      <div style="height:6px;border-radius:3px;background:#E8EFEB"><div style="width:56%;height:100%;border-radius:3px;background:#5B4FA9"></div></div>
+      <div style="font-size:11px;color:#3F4946;margin-top:4px">21 entries · 22% of spend</div></div>
+      <span class="ms" style="font-size:20px;color:#3F4946">more_vert</span>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px">
+      <span class="ms" style="font-size:18px;color:#BEC9C4">drag_indicator</span>
+      <div style="width:38px;height:38px;border-radius:50%;background:#D9E2FF;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:19px;color:#3B5BA9">local_taxi</span></div>
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:14px;font-weight:500;color:#171D1B">Travel</span><span style="font-size:13px;color:#171D1B">₹8,940</span></div>
+      <div style="height:6px;border-radius:3px;background:#E8EFEB"><div style="width:40%;height:100%;border-radius:3px;background:#3B5BA9"></div></div>
+      <div style="font-size:11px;color:#3F4946;margin-top:4px">38 entries · 16% of spend</div></div>
+      <span class="ms" style="font-size:20px;color:#3F4946">more_vert</span>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative">
+      <span class="ms" style="font-size:18px;color:#BEC9C4">drag_indicator</span>
+      <div style="width:38px;height:38px;border-radius:50%;background:#FFD8E4;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:19px;color:#8E4963">movie</span></div>
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:14px;font-weight:500;color:#171D1B">Entertainment</span><span style="font-size:13px;color:#171D1B">₹4,120</span></div>
+      <div style="height:6px;border-radius:3px;background:#E8EFEB"><div style="width:19%;height:100%;border-radius:3px;background:#8E4963"></div></div>
+      <div style="font-size:11px;color:#3F4946;margin-top:4px">9 entries · 7% of spend</div></div>
+      <span class="ms" style="font-size:20px;color:#3F4946">more_vert</span>
+      <div style="position:absolute;right:10px;top:44px;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:6px 0;width:150px;z-index:2">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;color:#171D1B"><span class="ms" style="font-size:17px;color:#3F4946">edit</span>Edit</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;color:#171D1B"><span class="ms" style="font-size:17px;color:#3F4946">call_merge</span>Merge into…</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;color:#171D1B"><span class="ms" style="font-size:17px;color:#3F4946">archive</span>Archive</div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;opacity:.55">
+      <span class="ms" style="font-size:18px;color:#BEC9C4">drag_indicator</span>
+      <div style="width:38px;height:38px;border-radius:50%;background:#E8EFEB;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:19px;color:#3F4946">archive</span></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:500;color:#171D1B">Wedding 2025 <span style="font-weight:400;color:#3F4946">— archived</span></div><div style="font-size:11px;color:#3F4946;margin-top:2px">Hidden from pickers, history kept</div></div>
+    </div>
+  </div>
+  <div style="height:14px"></div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Usage stats per category (amount, share-of-spend bar, entry count) + the wanted reorder / merge / archive actions in the overflow menu.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1i RECURRING ═══════════ -->
+<div class="dv-opt" id="1i" data-screen-label="Recurring">
+<div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Recurring</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px">
+    <span class="ms" style="font-size:24px;color:#171D1B;padding:8px">arrow_back</span>
+    <span style="font-size:18px;font-weight:500;color:#171D1B">Recurring</span>
+    <div style="flex:1"></div>
+    <span class="ms" style="font-size:22px;color:#171D1B;padding:8px">add</span>
+  </div>
+  <div style="background:#E8EFEB;border-radius:16px;margin:4px 16px 12px;padding:12px 16px;display:flex;align-items:center;gap:12px">
+    <span class="ms" style="font-size:20px;color:#006A60">event_upcoming</span>
+    <span style="font-size:13px;color:#171D1B">₹23,360 scheduled this month · 3 upcoming</span>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:8px;padding:0 16px">
+    <div style="background:#fff;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;border-radius:50%;background:#E5DEFF;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#5B4FA9">home_work</span></div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Rent</div><div style="font-size:12px;color:#3F4946">₹15,000 · monthly · next 1 Aug</div></div>
+      <div style="width:44px;height:26px;border-radius:13px;background:#006A60;display:flex;align-items:center;justify-content:flex-end;padding:0 3px;box-sizing:border-box"><div style="width:20px;height:20px;border-radius:50%;background:#fff"></div></div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;border-radius:50%;background:#FFD8E4;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#8E4963">subscriptions</span></div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Streaming bundle</div><div style="font-size:12px;color:#3F4946">₹649 · monthly · next 15 Jul</div></div>
+      <div style="width:44px;height:26px;border-radius:13px;background:#006A60;display:flex;align-items:center;justify-content:flex-end;padding:0 3px;box-sizing:border-box"><div style="width:20px;height:20px;border-radius:50%;background:#fff"></div></div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;border-radius:50%;background:#CDE8E1;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#006A60">fitness_center</span></div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Gym membership</div><div style="font-size:12px;color:#3F4946">₹1,200 · monthly · next 20 Jul</div></div>
+      <div style="width:44px;height:26px;border-radius:13px;background:#006A60;display:flex;align-items:center;justify-content:flex-end;padding:0 3px;box-sizing:border-box"><div style="width:20px;height:20px;border-radius:50%;background:#fff"></div></div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;border:1px dashed #BEC9C4">
+      <div style="width:40px;height:40px;border-radius:50%;background:#E8EFEB;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#3F4946">wifi</span></div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Broadband</div><div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#7A4F00;font-weight:500"><span class="ms" style="font-size:14px">pause_circle</span>Paused · won’t generate entries</div></div>
+      <div style="width:44px;height:26px;border-radius:13px;background:#E8EFEB;border:1px solid #BEC9C4;display:flex;align-items:center;padding:0 3px;box-sizing:border-box"><div style="width:18px;height:18px;border-radius:50%;background:#3F4946"></div></div>
+    </div>
+    <div style="padding:8px 2px 2px"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">GENERATED THIS MONTH</span></div>
+    <div style="background:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px">
+      <span class="msf" style="font-size:20px;color:#006A60">check_circle</span>
+      <div style="flex:1"><div style="font-size:14px;color:#171D1B">Rent — auto-added 1 Jul</div></div>
+      <div style="font-size:14px;font-weight:500;color:#8C1D18">−₹15,000</div>
+    </div>
+  </div>
+  <div style="height:14px"></div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Adds edit + pause/resume (wanted-next) via switches; paused items visibly dashed. Month summary up top; auto-generated entries get a receipt trail.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1j SYNC & BACKUP ═══════════ -->
+<div class="dv-opt" id="1j" data-screen-label="Sync and backup">
+<div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Sync &amp; backup</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px">
+    <span class="ms" style="font-size:24px;color:#171D1B;padding:8px">arrow_back</span>
+    <span style="font-size:18px;font-weight:500;color:#171D1B">Sync &amp; backup</span>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:8px 16px">
+    <div style="padding:0 2px"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">WHERE YOUR DATA LIVES</span></div>
+    <div style="background:#fff;border-radius:20px;padding:16px;display:flex;gap:12px;outline:2px solid #006A60">
+      <span class="msf" style="font-size:22px;color:#006A60">smartphone</span>
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:15px;font-weight:500;color:#171D1B">On this device</span><span style="background:#CDE8E1;color:#00201C;border-radius:8px;padding:3px 9px;font-size:11px;font-weight:600">CURRENT</span></div><div style="font-size:12px;color:#3F4946;margin-top:3px">Fully offline. Nothing leaves your phone.</div></div>
+    </div>
+    <div style="background:#fff;border-radius:20px;padding:16px;display:flex;gap:12px">
+      <span class="ms" style="font-size:22px;color:#3F4946">cloud_upload</span>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Device + cloud copy</div><div style="font-size:12px;color:#3F4946;margin-top:3px">Offline-first, with a one-way backup to your own Supabase.</div></div>
+      <span class="ms" style="font-size:20px;color:#3F4946">chevron_right</span>
+    </div>
+    <div style="background:#fff;border-radius:20px;padding:16px;display:flex;gap:12px;opacity:.6">
+      <span class="ms" style="font-size:22px;color:#3F4946">cloud_sync</span>
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:#171D1B">Two-way sync <span style="font-weight:400;color:#3F4946">— coming soon</span></div><div style="font-size:12px;color:#3F4946;margin-top:3px">Multiple devices, conflict handling.</div></div>
+    </div>
+    <div style="padding:6px 2px 0"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">CLOUD COPY STATUS</span></div>
+    <div style="background:#E8EFEB;border-radius:20px;padding:16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="msf" style="font-size:22px;color:#006A60">cloud_done</span>
+        <div style="flex:1"><div style="font-size:14px;font-weight:500;color:#171D1B">Backed up · 3 entries pending</div><div style="font-size:12px;color:#3F4946">Last sync today, 9:12 am</div></div>
+        <div style="background:#006A60;color:#fff;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:500">Sync now</div>
+      </div>
+      <div style="height:1px;background:#BEC9C4;opacity:.4;margin:14px 0"></div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#3F4946">Today, 9:12 am</span><span style="color:#006A60;font-weight:500">412 rows · ok</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#3F4946">6 Jul, 8:47 pm</span><span style="color:#006A60;font-weight:500">18 rows · ok</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#3F4946">5 Jul, 9:03 pm</span><span style="color:#8C1D18;font-weight:500">failed · retried ✓</span></div>
+      </div>
+    </div>
+    <div style="padding:6px 2px 0"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">LOCAL BACKUP</span></div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #BEC9C4;border-radius:24px;padding:12px 0;font-size:14px;font-weight:500;color:#006A60"><span class="ms" style="font-size:18px">download</span>Export file</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #BEC9C4;border-radius:24px;padding:12px 0;font-size:14px;font-weight:500;color:#006A60"><span class="ms" style="font-size:18px">restore</span>Restore…</div>
+    </div>
+    <div style="font-size:11px;color:#3F4946;padding:0 2px">Restore always asks before replacing data on this device.</div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Offline-first framing: local mode is the default and stated proudly; cloud is an explicit opt-in with plain-language modes, visible history, and error trail. Two-way sync shown as future.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1k SETTINGS ═══════════ -->
+<div class="dv-opt" id="1k" data-screen-label="Settings">
+<div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>Settings &amp; appearance</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#F4FBF8">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px">
+    <span class="ms" style="font-size:24px;color:#171D1B;padding:8px">arrow_back</span>
+    <span style="font-size:18px;font-weight:500;color:#171D1B">Settings</span>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:8px 16px">
+    <div style="padding:0 2px"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">APPEARANCE</span></div>
+    <div style="background:#fff;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;border:1px solid #BEC9C4;border-radius:24px;overflow:hidden">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;font-size:13px;color:#3F4946">Light</div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:9px 0;font-size:13px;color:#3F4946;border-left:1px solid #BEC9C4">Dark</div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#CDE8E1;padding:9px 0;font-size:13px;font-weight:500;color:#00201C;border-left:1px solid #BEC9C4"><span class="ms" style="font-size:16px">check</span>System</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:14px;color:#171D1B">Accent color</span>
+        <div style="display:flex;gap:8px">
+          <div style="width:28px;height:28px;border-radius:50%;background:#006A60;outline:2px solid #171D1B;outline-offset:2px"></div>
+          <div style="width:28px;height:28px;border-radius:50%;background:#3B5BA9"></div>
+          <div style="width:28px;height:28px;border-radius:50%;background:#8E4963"></div>
+          <div style="width:28px;height:28px;border-radius:50%;background:#7A4F00"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:14px;color:#171D1B">Currency</div><div style="font-size:12px;color:#3F4946">Symbol and formatting</div></div>
+        <div style="display:flex;align-items:center;gap:4px;border:1px solid #BEC9C4;border-radius:20px;padding:7px 12px;font-size:13px;font-weight:500;color:#171D1B">₹ INR<span class="ms" style="font-size:16px">arrow_drop_down</span></div>
+      </div>
+    </div>
+    <div style="padding:6px 2px 0"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">PRIVACY</span></div>
+    <div style="background:#fff;border-radius:20px;padding:4px 16px">
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #E8EFEB">
+        <span class="ms" style="font-size:21px;color:#3F4946">lock</span>
+        <div style="flex:1"><div style="font-size:14px;color:#171D1B">App lock</div><div style="font-size:12px;color:#3F4946">PIN + fingerprint on open</div></div>
+        <div style="width:44px;height:26px;border-radius:13px;background:#006A60;display:flex;align-items:center;justify-content:flex-end;padding:0 3px;box-sizing:border-box"><div style="width:20px;height:20px;border-radius:50%;background:#fff"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 0">
+        <span class="ms" style="font-size:21px;color:#3F4946">visibility_off</span>
+        <div style="flex:1"><div style="font-size:14px;color:#171D1B">Hide balances</div><div style="font-size:12px;color:#3F4946">Tap the eye to reveal</div></div>
+        <div style="width:44px;height:26px;border-radius:13px;background:#E8EFEB;border:1px solid #BEC9C4;display:flex;align-items:center;padding:0 3px;box-sizing:border-box"><div style="width:18px;height:18px;border-radius:50%;background:#3F4946"></div></div>
+      </div>
+    </div>
+    <div style="padding:6px 2px 0"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">DATA</span></div>
+    <div style="background:#fff;border-radius:20px;padding:4px 16px">
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #E8EFEB">
+        <span class="ms" style="font-size:21px;color:#3F4946">cloud</span>
+        <div style="flex:1"><div style="font-size:14px;color:#171D1B">Sync &amp; backup</div><div style="font-size:12px;color:#3F4946">On this device · backed up 9:12 am</div></div>
+        <span class="ms" style="font-size:20px;color:#3F4946">chevron_right</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #E8EFEB">
+        <span class="ms" style="font-size:21px;color:#3F4946">category</span>
+        <div style="flex:1"><div style="font-size:14px;color:#171D1B">Categories</div></div>
+        <span class="ms" style="font-size:20px;color:#3F4946">chevron_right</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 0">
+        <span class="ms" style="font-size:21px;color:#3F4946">event_repeat</span>
+        <div style="flex:1"><div style="font-size:14px;color:#171D1B">Recurring</div></div>
+        <span class="ms" style="font-size:20px;color:#3F4946">chevron_right</span>
+      </div>
+    </div>
+    <div style="padding:6px 2px 0"><span style="font-size:12px;font-weight:600;color:#3F4946;letter-spacing:.5px">HELP</span></div>
+    <div style="background:#fff;border-radius:20px;padding:4px 16px">
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 0">
+        <span class="ms" style="font-size:21px;color:#3F4946">bug_report</span>
+        <div style="flex:1"><div style="font-size:14px;color:#171D1B">Diagnostics &amp; error log</div></div>
+        <span class="ms" style="font-size:20px;color:#3F4946">chevron_right</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">More = this hub: appearance (theme / accent / currency), the new app-lock + hide-balances privacy pair, and entry points for Categories, Recurring, Sync, diagnostics.</p></sc-if>
+</div>
+
+</div>
+<p class="dv-next">Try next: "make the dashboard hero card lighter" · "show <a class="dv-oid" href="#1d">1d</a> with the keyboard open" · "turn <a class="dv-oid" href="#1a">1a</a>–<a class="dv-oid" href="#1b">1b</a> into a clickable prototype"</p>
+</section>
+
+
+
+<sc-if value="{{ showDarkRow }}" hint-placeholder-val="{{ true }}">
+<section class="dv-turn" id="t1d">
+<div class="dv-thd"><a class="dv-tid" href="#t1d">1·dark</a><span class="dv-tname">Dark theme — same tokens, remapped</span></div>
+<div class="dv-opts">
+
+<!-- ═══════════ 1l DASHBOARD DARK ═══════════ -->
+<div class="dv-opt" id="1l" data-screen-label="Dashboard — dark">
+<div class="dv-olabel"><a class="dv-oid" href="#1l">1l</a>Dashboard — dark</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#0E1513">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 4px">
+    <div>
+      <div style="font-size:13px;color:#BFC9C4">Tuesday, 7 July</div>
+      <div style="font-size:22px;font-weight:500;color:#DDE4E1">Good evening</div>
+    </div>
+    <div style="width:40px;height:40px;border-radius:50%;background:#334B46;display:flex;align-items:center;justify-content:center;color:#CDE8E1;font-weight:500;font-size:16px">A</div>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:12px 16px 8px">
+    <div style="background:#005048;border-radius:24px;padding:20px;color:#fff">
+      <div style="font-size:13px;color:#9EF2E4;opacity:.85">Available balance</div>
+      <div style="font-size:36px;font-weight:600;letter-spacing:-.5px;margin:2px 0 14px">₹1,84,250</div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1;background:rgba(255,255,255,.1);border-radius:14px;padding:10px 12px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;opacity:.85"><span class="ms" style="font-size:16px">arrow_downward</span>Income · Jul</div>
+          <div style="font-size:17px;font-weight:500;margin-top:2px">₹92,000</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,.1);border-radius:14px;padding:10px 12px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;opacity:.85"><span class="ms" style="font-size:16px">arrow_upward</span>Expense · Jul</div>
+          <div style="font-size:17px;font-weight:500;margin-top:2px">₹57,340</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:#1B2320;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#83D5C6">remove</span><span style="font-size:12px;font-weight:500;color:#DDE4E1">Expense</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:#1B2320;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#83D5C6">add</span><span style="font-size:12px;font-weight:500;color:#DDE4E1">Income</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:#1B2320;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#83D5C6">swap_horiz</span><span style="font-size:12px;font-weight:500;color:#DDE4E1">Transfer</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:#1B2320;border-radius:16px;padding:12px 4px"><span class="ms" style="font-size:22px;color:#83D5C6">event_repeat</span><span style="font-size:12px;font-weight:500;color:#DDE4E1">EMI</span></div>
+    </div>
+    <div style="background:#1B2320;border-radius:20px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:500;color:#DDE4E1">Cashflow</span>
+        <span style="font-size:12px;color:#BFC9C4">6 months</span>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:14px;height:84px">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:44px;border-radius:4px;background:#83D5C6"></div><div style="width:9px;height:30px;border-radius:4px;background:#3F4946"></div></div><span style="font-size:10px;color:#BFC9C4">Feb</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:50px;border-radius:4px;background:#83D5C6"></div><div style="width:9px;height:42px;border-radius:4px;background:#3F4946"></div></div><span style="font-size:10px;color:#BFC9C4">Mar</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:46px;border-radius:4px;background:#83D5C6"></div><div style="width:9px;height:52px;border-radius:4px;background:#3F4946"></div></div><span style="font-size:10px;color:#BFC9C4">Apr</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:58px;border-radius:4px;background:#83D5C6"></div><div style="width:9px;height:38px;border-radius:4px;background:#3F4946"></div></div><span style="font-size:10px;color:#BFC9C4">May</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:52px;border-radius:4px;background:#83D5C6"></div><div style="width:9px;height:44px;border-radius:4px;background:#3F4946"></div></div><span style="font-size:10px;color:#BFC9C4">Jun</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end"><div style="display:flex;gap:3px;align-items:flex-end"><div style="width:9px;height:64px;border-radius:4px;background:#83D5C6"></div><div style="width:9px;height:40px;border-radius:4px;background:#3F4946"></div></div><span style="font-size:10px;font-weight:500;color:#DDE4E1">Jul</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px 8px">
+        <span style="font-size:14px;font-weight:500;color:#DDE4E1">Recent</span>
+        <span style="font-size:12px;font-weight:500;color:#83D5C6">See all</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 2px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#3A3020;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#FFE0B2">restaurant</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#DDE4E1">Lunch — Sagar Ratna</div><div style="font-size:12px;color:#BFC9C4">Food · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#FFB4AB">−₹420</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 2px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#0F3B34;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#83D5C6">work</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#DDE4E1">Salary — July</div><div style="font-size:12px;color:#BFC9C4">Income · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#83D5C6">+₹85,000</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 2px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#12303F;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#7FCFFF">swap_horiz</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#DDE4E1">To Cash wallet</div><div style="font-size:12px;color:#BFC9C4">Transfer · HDFC → Cash</div></div>
+        <div style="font-size:15px;font-weight:500;color:#7FCFFF">₹5,000</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;background:#1B2320;padding:10px 4px 6px">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:56px;height:28px;border-radius:14px;background:#334B46;display:flex;align-items:center;justify-content:center"><span class="msf" style="font-size:20px;color:#CDE8E1">home</span></div><span style="font-size:11px;font-weight:600;color:#DDE4E1">Home</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#BFC9C4">receipt_long</span></div><span style="font-size:11px;color:#BFC9C4">Activity</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#BFC9C4">handshake</span></div><span style="font-size:11px;color:#BFC9C4">Loans</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#BFC9C4">wallet</span></div><span style="font-size:11px;color:#BFC9C4">Accounts</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#BFC9C4">more_horiz</span></div><span style="font-size:11px;color:#BFC9C4">More</span></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Same layout, M3 dark mapping: tonal surfaces (#0E1513 / #1B2320), primary flips to #83D5C6, hero keeps the primary-container role at low luminance.</p></sc-if>
+</div>
+
+<!-- ═══════════ 1m TRANSACTIONS DARK ═══════════ -->
+<div class="dv-opt" id="1m" data-screen-label="Transactions — dark">
+<div class="dv-olabel"><a class="dv-oid" href="#1m">1m</a>Transactions — dark</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="428px,908px">
+<div style="display:flex;flex-direction:column;height:100%;font-family:Outfit,Roboto,sans-serif;background:#0E1513;position:relative">
+  <div style="padding:12px 16px 0"><div style="font-size:22px;font-weight:500;color:#DDE4E1">Activity</div></div>
+  <div style="padding:12px 16px 10px">
+    <div style="display:flex;align-items:center;gap:10px;background:#1B2320;border-radius:28px;padding:13px 16px">
+      <span class="ms" style="font-size:20px;color:#BFC9C4">search</span>
+      <span style="font-size:15px;color:#BFC9C4">Search notes, amounts, categories</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;padding:0 16px 12px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:5px;background:#334B46;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:500;color:#CDE8E1"><span class="ms" style="font-size:16px">check</span>All</div>
+    <div style="border:1px solid #3F4946;border-radius:8px;padding:7px 12px;font-size:13px;color:#BFC9C4">Income</div>
+    <div style="border:1px solid #3F4946;border-radius:8px;padding:7px 12px;font-size:13px;color:#BFC9C4">Expense</div>
+    <div style="border:1px solid #3F4946;border-radius:8px;padding:7px 12px;font-size:13px;color:#BFC9C4">Transfer</div>
+    <div style="display:flex;align-items:center;gap:4px;border:1px solid #3F4946;border-radius:8px;padding:7px 12px;font-size:13px;color:#BFC9C4">Jul<span class="ms" style="font-size:16px">arrow_drop_down</span></div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:0 16px">
+    <div style="display:flex;justify-content:space-between;padding:8px 2px 4px"><span style="font-size:12px;font-weight:600;color:#BFC9C4;letter-spacing:.5px">TODAY</span><span style="font-size:12px;color:#BFC9C4">−₹1,090</span></div>
+    <div style="background:#1B2320;border-radius:16px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#3A3020;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#FFE0B2">restaurant</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#DDE4E1">Lunch — Sagar Ratna</div><div style="font-size:12px;color:#BFC9C4">Food · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#FFB4AB">−₹420</div>
+      </div>
+      <div style="height:1px;background:#252B29;margin:0 14px"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#26304A;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#B7C8FF">local_taxi</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#DDE4E1">Auto to office</div><div style="font-size:12px;color:#BFC9C4">Travel · Cash</div></div>
+        <div style="font-size:15px;font-weight:500;color:#FFB4AB">−₹120</div>
+      </div>
+      <div style="height:1px;background:#252B29;margin:0 14px"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#322B4A;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#CCBEFF">shopping_bag</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#DDE4E1">Groceries — BigBasket</div><div style="font-size:12px;color:#BFC9C4">Household · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#FFB4AB">−₹550</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:14px 2px 4px"><span style="font-size:12px;font-weight:600;color:#BFC9C4;letter-spacing:.5px">YESTERDAY</span><span style="font-size:12px;color:#BFC9C4">+₹84,180</span></div>
+    <div style="background:#1B2320;border-radius:16px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#0F3B34;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#83D5C6">work</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#DDE4E1">Salary — July</div><div style="font-size:12px;color:#BFC9C4">Income · HDFC Bank</div></div>
+        <div style="font-size:15px;font-weight:500;color:#83D5C6">+₹85,000</div>
+      </div>
+      <div style="height:1px;background:#252B29;margin:0 14px"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#12303F;display:flex;align-items:center;justify-content:center"><span class="ms" style="font-size:20px;color:#7FCFFF">swap_horiz</span></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;color:#DDE4E1">To Cash wallet</div><div style="font-size:12px;color:#BFC9C4">Transfer · HDFC → Cash</div></div>
+        <div style="font-size:15px;font-weight:500;color:#7FCFFF">₹5,000</div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;right:16px;bottom:78px;width:56px;height:56px;border-radius:16px;background:#005048;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4)"><span class="ms" style="font-size:26px;color:#9EF2E4">add</span></div>
+  <div style="display:flex;background:#1B2320;padding:10px 4px 6px">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#BFC9C4">home</span></div><span style="font-size:11px;color:#BFC9C4">Home</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:56px;height:28px;border-radius:14px;background:#334B46;display:flex;align-items:center;justify-content:center"><span class="msf" style="font-size:20px;color:#CDE8E1">receipt_long</span></div><span style="font-size:11px;font-weight:600;color:#DDE4E1">Activity</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#BFC9C4">handshake</span></div><span style="font-size:11px;color:#BFC9C4">Loans</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#BFC9C4">wallet</span></div><span style="font-size:11px;color:#BFC9C4">Accounts</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:28px;display:flex;align-items:center"><span class="ms" style="font-size:20px;color:#BFC9C4">more_horiz</span></div><span style="font-size:11px;color:#BFC9C4">More</span></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><p class="dv-note">Category chip colors drop to dark tonal containers so the list stays calm; income/expense/transfer amounts use the M3 dark accents (#83D5C6 / #FFB4AB / #7FCFFF).</p></sc-if>
+</div>
+
+</div>
+<p class="dv-next">Try next: "dark versions of <a class="dv-oid" href="#1e">1e</a> and <a class="dv-oid" href="#1f">1f</a>" · "pure-black AMOLED variant" · "apply the blue accent from Settings across a screen"</p>
+</section>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Canvas&quot;},&quot;showDarkRow&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Canvas&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showNotes: this.props.showNotes ?? true,
+      showDarkRow: this.props.showDarkRow ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>

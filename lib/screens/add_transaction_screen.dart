@@ -13,8 +13,9 @@ import '../utils/icon_utils.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final Transaction? transaction;
+  final CategoryType? initialType;
 
-  const AddTransactionScreen({super.key, this.transaction});
+  const AddTransactionScreen({super.key, this.transaction, this.initialType});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -66,7 +67,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         _title = '';
         _amount = 0.0;
         _selectedDate = DateTime.now();
-        _type = CategoryType.expense;
+        _type = widget.initialType ?? CategoryType.expense;
         _isForeignCurrency = false;
         _originalCurrency = 'USD';
       }
@@ -81,9 +82,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       // Validate title securely
       final titleValidation = SecurityUtils.validateTitle(_title);
       if (!titleValidation.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(titleValidation.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(titleValidation.errorMessage!)));
         return;
       }
       _title = titleValidation.value;
@@ -94,9 +95,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         maxValue: 999999999.99,
       );
       if (!amountValidation.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(amountValidation.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(amountValidation.errorMessage!)));
         return;
       }
       _amount = amountValidation.value;
@@ -146,8 +147,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         try {
           final linkedLoan = loans.firstWhere((l) => l.id == validatedLoanId);
           final isValidLoanLink =
-              (_type == CategoryType.expense && linkedLoan.type == LoanType.taken) ||
-              (_type == CategoryType.income && linkedLoan.type == LoanType.given);
+              (_type == CategoryType.expense &&
+                  linkedLoan.type == LoanType.taken) ||
+              (_type == CategoryType.income &&
+                  linkedLoan.type == LoanType.given);
 
           if (!isValidLoanLink) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -263,7 +266,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               Container(
                 margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -286,7 +291,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ],
                 ),
               ),
-              // Basic Details Card
+              if (widget.transaction == null)
+                _RecentTemplateChips(
+                  type: _type,
+                  categories: Provider.of<CategoryProvider>(
+                    context,
+                    listen: false,
+                  ).categories,
+                  onSelected: (template) {
+                    setState(() {
+                      _type = template.type;
+                      _title = template.title;
+                      _amount = template.amount;
+                      _selectedAccountId = template.accountId;
+                      _transferAccountId = template.transferAccountId;
+                      _selectedLoanId = null;
+                      if (template.type != CategoryType.transfer) {
+                        _selectedCategory = template.category;
+                      }
+                    });
+                  },
+                ),
+              // Amount-first fast entry card
               Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -302,36 +328,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Transaction Details',
+                        'Amount',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
-                        initialValue: _title,
-                        decoration: const InputDecoration(
-                          labelText: 'Title',
-                          prefixIcon: Icon(Icons.edit_outlined),
-                        ),
-                        validator: (val) {
-                          if (val == null || val.isEmpty) {
-                            return 'Please enter a title';
-                          }
-                          return null;
-                        },
-                        onSaved: (val) {
-                          _title = val!;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
+                        key: ValueKey('amount-$_amount'),
                         initialValue: _amount > 0 ? _amount.toString() : null,
                         decoration: InputDecoration(
                           labelText: _isForeignCurrency
                               ? 'Amount in Default Currency (Equivalent)'
                               : 'Amount',
-                          prefixIcon: const Icon(Icons.currency_exchange_outlined),
+                          prefixIcon: const Icon(
+                            Icons.currency_exchange_outlined,
+                          ),
                         ),
                         keyboardType: TextInputType.number,
                         validator: (val) {
@@ -342,6 +354,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         },
                         onSaved: (val) {
                           _amount = double.parse(val!);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        key: ValueKey('title-$_title'),
+                        initialValue: _title,
+                        decoration: const InputDecoration(
+                          labelText: 'Note',
+                          prefixIcon: Icon(Icons.edit_outlined),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.isEmpty) {
+                            return 'Please enter a note';
+                          }
+                          return null;
+                        },
+                        onSaved: (val) {
+                          _title = val!;
                         },
                       ),
                       const SizedBox(height: 16),
@@ -365,9 +395,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .outlineVariant,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outlineVariant,
                                       ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -376,16 +406,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                         Icon(
                                           Icons.calendar_today_outlined,
                                           size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          DateFormat.yMd().format(_selectedDate),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium,
+                                          DateFormat.yMd().format(
+                                            _selectedDate,
+                                          ),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium,
                                         ),
                                       ],
                                     ),
@@ -409,7 +441,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                         side: BorderSide(
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),
@@ -424,28 +458,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
+                                    color: Theme.of(context).colorScheme.primary
                                         .withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Icon(
                                     Icons.compare_arrows_rounded,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     size: 18,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
                                   'Transfer Between Accounts',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -534,8 +563,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         child: DropdownButtonFormField<int>(
                           decoration: const InputDecoration(
                             labelText: 'Account',
-                            prefixIcon:
-                                Icon(Icons.account_balance_wallet_outlined),
+                            prefixIcon: Icon(
+                              Icons.account_balance_wallet_outlined,
+                            ),
                           ),
                           initialValue: _selectedAccountId,
                           validator: (val) {
@@ -583,12 +613,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         children: [
                           Text(
                             'Currency Details',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           FilterChip(
                             label: const Text('Foreign Currency?'),
@@ -609,12 +635,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             Expanded(
                               flex: 2,
                               child: TextFormField(
-                                initialValue:
-                                    _originalAmount?.toString(),
+                                initialValue: _originalAmount?.toString(),
                                 decoration: const InputDecoration(
                                   labelText: 'Amount (Foreign)',
-                                  prefixIcon:
-                                      Icon(Icons.currency_exchange_outlined),
+                                  prefixIcon: Icon(
+                                    Icons.currency_exchange_outlined,
+                                  ),
                                 ),
                                 keyboardType: TextInputType.number,
                                 validator: (val) {
@@ -627,8 +653,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 },
                                 onSaved: (val) {
                                   if (_isForeignCurrency) {
-                                    _originalAmount =
-                                        double.parse(val!);
+                                    _originalAmount = double.parse(val!);
                                   }
                                 },
                               ),
@@ -636,18 +661,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               flex: 1,
-                              child:
-                                  DropdownButtonFormField<String>(
+                              child: DropdownButtonFormField<String>(
                                 decoration: const InputDecoration(
                                   labelText: 'Currency',
                                 ),
                                 initialValue: _originalCurrency,
-                                items: [
-                                  'USD',
-                                  'EUR',
-                                  'GBP',
-                                  'INR'
-                                ]
+                                items: ['USD', 'EUR', 'GBP', 'INR']
                                     .map(
                                       (c) => DropdownMenuItem(
                                         value: c,
@@ -655,10 +674,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                       ),
                                     )
                                     .toList(),
-                                onChanged: (val) => setState(
-                                  () =>
-                                      _originalCurrency = val!,
-                                ),
+                                onChanged: (val) =>
+                                    setState(() => _originalCurrency = val!),
                                 onSaved: (val) {
                                   if (_isForeignCurrency) {
                                     _originalCurrency = val!;
@@ -691,66 +708,69 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       children: [
                         Text(
                           'Category',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 12),
-                        DropdownButtonFormField<Category>(
-                          decoration: const InputDecoration(
-                            labelText: 'Select Category',
-                            prefixIcon:
-                                Icon(Icons.category_outlined),
-                          ),
-                          initialValue: _selectedCategory,
-                          items: categories.map((cat) {
-                            return DropdownMenuItem(
-                              value: cat,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      color: Color(cat.colorValue)
-                                        .withValues(alpha: 0.15),
-                                      borderRadius:
-                                          BorderRadius.circular(6),
-                                    ),
-                                    child: Icon(
-                                      categoryIconData(cat.iconCode, fontFamily: cat.fontFamily, fontPackage: cat.fontPackage),
-                                      size: 14,
-                                      color: Color(cat.colorValue),
-                                    ),
+                        if (categories.isEmpty)
+                          Text(
+                            'No categories found for this type',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          )
+                        else
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: categories.map((cat) {
+                              final selected = _selectedCategory?.id == cat.id;
+                              return ChoiceChip(
+                                selected: selected,
+                                showCheckmark: false,
+                                avatar: Icon(
+                                  categoryIconData(
+                                    cat.iconCode,
+                                    fontFamily: cat.fontFamily,
+                                    fontPackage: cat.fontPackage,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text(cat.name),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          validator: (val) {
-                            if (_type != CategoryType.transfer &&
-                                val == null) {
-                              return 'Please select a category';
-                            }
-                            return null;
-                          },
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedCategory = val;
-                            });
-                          },
-                        ),
+                                  size: 18,
+                                  color: selected
+                                      ? Theme.of(context).colorScheme.onPrimary
+                                      : Color(cat.colorValue),
+                                ),
+                                label: Text(cat.name),
+                                selectedColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                labelStyle: TextStyle(
+                                  color: selected
+                                      ? Theme.of(context).colorScheme.onPrimary
+                                      : null,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedCategory = cat;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        if (_selectedCategory == null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Choose a category before saving',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                 ),
-              if (_type != CategoryType.transfer)
-                const SizedBox(height: 16),
+              if (_type != CategoryType.transfer) const SizedBox(height: 16),
               if (_type != CategoryType.transfer)
                 Consumer<LoanProvider>(
                   builder: (context, loanProvider, child) {
@@ -767,76 +787,71 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                     if (loans.isEmpty) return const SizedBox.shrink();
 
-                    final dropdownValue = loans.any((l) => l.id == _selectedLoanId)
+                    final dropdownValue =
+                        loans.any((l) => l.id == _selectedLoanId)
                         ? _selectedLoanId
                         : null;
 
                     return Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                        width: 0.5,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          width: 0.5,
+                        ),
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Linked Loan (Optional)',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Only repayment-compatible open loans are shown',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          DropdownButtonFormField<int>(
-                            decoration: const InputDecoration(
-                              labelText: 'Select Loan',
-                              prefixIcon: Icon(Icons.credit_score_outlined),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Linked Loan (Optional)',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            initialValue: dropdownValue,
-                            items: [
-                              const DropdownMenuItem<int>(
-                                value: null,
-                                child: Text('None'),
-                              ),
-                              ...loans.map((loan) {
-                                return DropdownMenuItem<int>(
-                                  value: loan.id,
-                                  child: Text(
-                                    '${loan.title} (${loan.type == LoanType.taken ? 'Taken' : 'Given'})',
-                                    overflow: TextOverflow.ellipsis,
+                            const SizedBox(height: 8),
+                            Text(
+                              'Only repayment-compatible open loans are shown',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
-                                );
-                              }),
-                            ],
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedLoanId = val;
-                              });
-                            },
-                          ),
-                        ],
+                            ),
+                            const SizedBox(height: 12),
+                            DropdownButtonFormField<int>(
+                              decoration: const InputDecoration(
+                                labelText: 'Select Loan',
+                                prefixIcon: Icon(Icons.credit_score_outlined),
+                              ),
+                              initialValue: dropdownValue,
+                              items: [
+                                const DropdownMenuItem<int>(
+                                  value: null,
+                                  child: Text('None'),
+                                ),
+                                ...loans.map((loan) {
+                                  return DropdownMenuItem<int>(
+                                    value: loan.id,
+                                    child: Text(
+                                      '${loan.title} (${loan.type == LoanType.taken ? 'Taken' : 'Given'})',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }),
+                              ],
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedLoanId = val;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                     );
                   },
                 ),
@@ -864,11 +879,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildTypeSegment(
-    String title,
-    CategoryType type,
-    Color color,
-  ) {
+  Widget _buildTypeSegment(String title, CategoryType type, Color color) {
     bool isSelected = _type == type;
     return Expanded(
       child: GestureDetector(
@@ -877,8 +888,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             _type = type;
             _selectedLoanId = null;
             // Reset category if switching type (unless editing same txn)
-            if (_selectedCategory != null &&
-                _selectedCategory!.type != type) {
+            if (_selectedCategory != null && _selectedCategory!.type != type) {
               _selectedCategory = null;
             }
           });
@@ -891,19 +901,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             color: isSelected ? color : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: !isSelected
-                ? Border.all(
-                    color: color.withValues(alpha: 0.3),
-                    width: 1.5,
-                  )
+                ? Border.all(color: color.withValues(alpha: 0.3), width: 1.5)
                 : null,
           ),
           child: Center(
             child: Text(
               title,
               style: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : color.withValues(alpha: 0.7),
+                color: isSelected ? Colors.white : color.withValues(alpha: 0.7),
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
@@ -928,4 +933,118 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return currencyCode;
     }
   }
+}
+
+class _RecentTemplateChips extends StatelessWidget {
+  final CategoryType type;
+  final List<Category> categories;
+  final ValueChanged<_TransactionTemplate> onSelected;
+
+  const _RecentTemplateChips({
+    required this.type,
+    required this.categories,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final transactions = context.watch<TransactionProvider>().transactions;
+    final templates = <_TransactionTemplate>[];
+    final seen = <String>{};
+
+    for (final tx in transactions) {
+      if (tx.type != type) continue;
+      final category = categories.firstWhere(
+        (cat) => cat.id == tx.categoryId,
+        orElse: () => Category(
+          name: 'Unknown',
+          iconCode: Icons.help_outline.codePoint,
+          colorValue: Colors.grey.toARGB32(),
+          type: tx.type,
+          isCustom: false,
+        ),
+      );
+      final key = '${tx.type}-${tx.title}-${tx.categoryId}-${tx.amount}';
+      if (!seen.add(key)) continue;
+
+      templates.add(
+        _TransactionTemplate(
+          title: tx.title,
+          amount: tx.amount,
+          type: tx.type,
+          category: category,
+          accountId: tx.accountId,
+          transferAccountId: tx.transferAccountId,
+        ),
+      );
+      if (templates.length == 5) break;
+    }
+
+    if (templates.isEmpty) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Recent & templates',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final template in templates)
+                  ActionChip(
+                    avatar: Icon(
+                      categoryIconData(
+                        template.category.iconCode,
+                        fontFamily: template.category.fontFamily,
+                        fontPackage: template.category.fontPackage,
+                      ),
+                      size: 18,
+                      color: Color(template.category.colorValue),
+                    ),
+                    label: Text(
+                      '${template.title} ${template.amount.toStringAsFixed(0)}',
+                    ),
+                    onPressed: () => onSelected(template),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionTemplate {
+  final String title;
+  final double amount;
+  final CategoryType type;
+  final Category category;
+  final int? accountId;
+  final int? transferAccountId;
+
+  const _TransactionTemplate({
+    required this.title,
+    required this.amount,
+    required this.type,
+    required this.category,
+    this.accountId,
+    this.transferAccountId,
+  });
 }

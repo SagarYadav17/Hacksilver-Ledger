@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
@@ -7,10 +8,11 @@ import '../providers/category_provider.dart';
 import '../providers/account_provider.dart';
 import '../providers/loan_provider.dart';
 import '../providers/currency_provider.dart';
+import '../providers/security_provider.dart';
 import '../models/category.dart';
 import '../widgets/summary_card.dart';
-import '../widgets/custom_drawer.dart';
 import '../widgets/account_summary.dart';
+import '../widgets/app_bottom_nav.dart';
 import 'add_transaction_screen.dart';
 import '../utils/icon_utils.dart';
 
@@ -21,6 +23,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final currency = Provider.of<CurrencyProvider>(context).currency;
+    final securityProvider = Provider.of<SecurityProvider>(context);
     final currencySymbol = _getCurrencySymbol(currency);
     final formatter = NumberFormat.currency(
       symbol: currencySymbol,
@@ -54,7 +57,7 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      drawer: const CustomDrawer(currentRoute: '/'),
+      bottomNavigationBar: const AppBottomNav(currentRoute: '/'),
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
@@ -74,6 +77,44 @@ class DashboardScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 96),
           children: [
             const SummaryCard(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Row(
+                children: [
+                  _QuickActionButton(
+                    label: 'Expense',
+                    icon: Icons.arrow_downward_rounded,
+                    color: colorScheme.error,
+                    onTap: () =>
+                        _openAddTransaction(context, CategoryType.expense),
+                  ),
+                  const SizedBox(width: 8),
+                  _QuickActionButton(
+                    label: 'Income',
+                    icon: Icons.arrow_upward_rounded,
+                    color: colorScheme.tertiary,
+                    onTap: () =>
+                        _openAddTransaction(context, CategoryType.income),
+                  ),
+                  const SizedBox(width: 8),
+                  _QuickActionButton(
+                    label: 'Transfer',
+                    icon: Icons.swap_horiz_rounded,
+                    color: colorScheme.primary,
+                    onTap: () =>
+                        _openAddTransaction(context, CategoryType.transfer),
+                  ),
+                  const SizedBox(width: 8),
+                  _QuickActionButton(
+                    label: 'EMI',
+                    icon: Icons.calendar_month_rounded,
+                    color: colorScheme.secondary,
+                    onTap: () => _openQuickAction(context, '/loans'),
+                  ),
+                ],
+              ),
+            ),
+            const _CashflowCard(),
             const AccountSummary(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
@@ -147,8 +188,7 @@ class DashboardScreen extends StatelessWidget {
                         const SizedBox(height: 28),
                         FilledButton.icon(
                           onPressed: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.of(context).pushNamed('/add-transaction');
+                            _openAddTransaction(context, CategoryType.expense);
                           },
                           icon: const Icon(Icons.add_rounded),
                           label: const Text('Create First Transaction'),
@@ -255,7 +295,11 @@ class DashboardScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
-                                    categoryIconData(category.iconCode, fontFamily: category.fontFamily, fontPackage: category.fontPackage),
+                                    categoryIconData(
+                                      category.iconCode,
+                                      fontFamily: category.fontFamily,
+                                      fontPackage: category.fontPackage,
+                                    ),
                                     color: Color(category.colorValue),
                                     size: 24,
                                   ),
@@ -296,7 +340,9 @@ class DashboardScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      formatter.format(tx.amount),
+                                      securityProvider.maskAmount(
+                                        formatter.format(tx.amount),
+                                      ),
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyLarge
@@ -338,8 +384,7 @@ class DashboardScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          HapticFeedback.mediumImpact();
-          Navigator.of(context).pushNamed('/add-transaction');
+          _openAddTransaction(context, CategoryType.expense);
         },
         icon: const Icon(Icons.add_rounded, size: 24),
         label: const Text('Add Transaction'),
@@ -361,5 +406,270 @@ class DashboardScreen extends StatelessWidget {
       default:
         return currencyCode;
     }
+  }
+
+  void _openQuickAction(BuildContext context, String route) {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).pushNamed(route);
+  }
+
+  void _openAddTransaction(BuildContext context, CategoryType initialType) {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddTransactionScreen(initialType: initialType),
+      ),
+    );
+  }
+}
+
+class _CashflowCard extends StatelessWidget {
+  const _CashflowCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Consumer<TransactionProvider>(
+      builder: (context, provider, child) {
+        final months = _lastSixMonths();
+        final buckets = months.map((month) {
+          final txs = provider.transactions.where(
+            (tx) => tx.date.year == month.year && tx.date.month == month.month,
+          );
+          final income = txs
+              .where((tx) => tx.type == CategoryType.income)
+              .fold<double>(0, (sum, tx) => sum + tx.amount);
+          final expense = txs
+              .where((tx) => tx.type == CategoryType.expense)
+              .fold<double>(0, (sum, tx) => sum + tx.amount);
+          return _CashflowBucket(month, income, expense);
+        }).toList();
+
+        final maxAmount = buckets.fold<double>(
+          0,
+          (max, bucket) => [
+            max,
+            bucket.income,
+            bucket.expense,
+          ].reduce((a, b) => a > b ? a : b),
+        );
+
+        return Card(
+          elevation: 0,
+          margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          color: colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Cashflow',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '6 months',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 144,
+                  child: BarChart(
+                    BarChartData(
+                      maxY: maxAmount == 0 ? 1 : maxAmount * 1.15,
+                      alignment: BarChartAlignment.spaceAround,
+                      gridData: const FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      titlesData: FlTitlesData(
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 28,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index < 0 || index >= buckets.length) {
+                                return const SizedBox.shrink();
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  DateFormat.MMM().format(buckets[index].month),
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      barGroups: [
+                        for (var i = 0; i < buckets.length; i++)
+                          BarChartGroupData(
+                            x: i,
+                            barsSpace: 4,
+                            barRods: [
+                              BarChartRodData(
+                                toY: buckets[i].income,
+                                width: 9,
+                                borderRadius: BorderRadius.circular(4),
+                                color: colorScheme.primary,
+                              ),
+                              BarChartRodData(
+                                toY: buckets[i].expense,
+                                width: 9,
+                                borderRadius: BorderRadius.circular(4),
+                                color: colorScheme.outlineVariant,
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                    duration: const Duration(milliseconds: 250),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _LegendDot(label: 'Income', color: colorScheme.primary),
+                    const SizedBox(width: 16),
+                    _LegendDot(
+                      label: 'Expense',
+                      color: colorScheme.outlineVariant,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<DateTime> _lastSixMonths() {
+    final now = DateTime.now();
+    return List.generate(6, (index) {
+      final monthOffset = now.month - 5 + index;
+      return DateTime(now.year, monthOffset, 1);
+    });
+  }
+}
+
+class _CashflowBucket {
+  final DateTime month;
+  final double income;
+  final double expense;
+
+  const _CashflowBucket(this.month, this.income, this.expense);
+}
+
+class _LegendDot extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _LegendDot({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  const _QuickActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Expanded(
+      child: Material(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 21),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

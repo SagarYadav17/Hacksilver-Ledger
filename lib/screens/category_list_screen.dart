@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../constants/app_constants.dart';
 import '../providers/category_provider.dart';
+import '../providers/currency_provider.dart';
+import '../providers/transaction_provider.dart';
 import '../models/category.dart';
 import '../widgets/custom_drawer.dart';
 import '../utils/icon_utils.dart';
@@ -51,11 +55,24 @@ class CategoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CategoryProvider>(
-      builder: (context, provider, child) {
-        final categories = provider.categories
+    final currency = context.watch<CurrencyProvider>().currency;
+    final formatter = NumberFormat.currency(
+      symbol: AppConstants.currencySymbols[currency] ?? currency,
+      decimalDigits: 2,
+    );
+
+    return Consumer2<CategoryProvider, TransactionProvider>(
+      builder: (context, categoryProvider, transactionProvider, child) {
+        final categories = categoryProvider.categories
             .where((c) => c.type == type)
             .toList();
+        final transactions = transactionProvider.transactions
+            .where((tx) => tx.type == type)
+            .toList();
+        final totalAmount = transactions.fold<double>(
+          0,
+          (sum, tx) => sum + tx.amount,
+        );
 
         if (categories.isEmpty) {
           return const Center(child: Text('No categories found.'));
@@ -65,15 +82,51 @@ class CategoryList extends StatelessWidget {
           itemCount: categories.length,
           itemBuilder: (context, index) {
             final cat = categories[index];
+            final categoryTransactions = transactions
+                .where((tx) => tx.categoryId == cat.id)
+                .toList();
+            final usageCount = categoryTransactions.length;
+            final usageAmount = categoryTransactions.fold<double>(
+              0,
+              (sum, tx) => sum + tx.amount,
+            );
+            final share = totalAmount == 0 ? 0.0 : usageAmount / totalAmount;
+            final categoryColor = Color(cat.colorValue);
+
             return ListTile(
               leading: CircleAvatar(
-                backgroundColor: Color(cat.colorValue).withValues(alpha: 0.2),
+                backgroundColor: categoryColor.withValues(alpha: 0.2),
                 child: Icon(
-                  categoryIconData(cat.iconCode, fontFamily: cat.fontFamily, fontPackage: cat.fontPackage),
-                  color: Color(cat.colorValue),
+                  categoryIconData(
+                    cat.iconCode,
+                    fontFamily: cat.fontFamily,
+                    fontPackage: cat.fontPackage,
+                  ),
+                  color: categoryColor,
                 ),
               ),
               title: Text(cat.name),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    usageCount == 0
+                        ? 'No transactions'
+                        : '$usageCount ${usageCount == 1 ? 'transaction' : 'transactions'} · ${formatter.format(usageAmount)} · ${(share * 100).toStringAsFixed(0)}%',
+                  ),
+                  if (usageCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: LinearProgressIndicator(
+                        value: share,
+                        minHeight: 4,
+                        backgroundColor: categoryColor.withValues(alpha: 0.12),
+                        color: categoryColor,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                ],
+              ),
               trailing: cat.isCustom
                   ? IconButton(
                       icon: const Icon(
@@ -96,7 +149,7 @@ class CategoryList extends StatelessWidget {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  provider.deleteCategory(cat.id!);
+                                  categoryProvider.deleteCategory(cat.id!);
                                   Navigator.of(ctx).pop();
                                 },
                                 child: const Text(

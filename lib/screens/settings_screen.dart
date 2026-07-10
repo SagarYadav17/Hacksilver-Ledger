@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/currency_provider.dart';
 import '../providers/sync_provider.dart';
-import '../widgets/custom_drawer.dart';
+import '../providers/security_provider.dart';
+import '../widgets/app_bottom_nav.dart';
 import '../services/backup_service.dart';
 import '../utils/security_utils.dart';
 
@@ -30,11 +31,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      drawer: const CustomDrawer(currentRoute: '/settings'),
+      appBar: AppBar(title: const Text('More')),
+      bottomNavigationBar: const AppBottomNav(currentRoute: '/settings'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSectionHeader(context, 'Manage', Icons.apps_outlined),
+          const SizedBox(height: 12),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+            ),
+            child: Column(
+              children: [
+                _buildNavigationTile(
+                  context,
+                  icon: Icons.category_outlined,
+                  title: 'Categories',
+                  subtitle: 'Manage income and expense categories',
+                  route: '/categories',
+                ),
+                Divider(color: colorScheme.outlineVariant),
+                _buildNavigationTile(
+                  context,
+                  icon: Icons.event_repeat_outlined,
+                  title: 'Recurring',
+                  subtitle: 'Manage scheduled transactions',
+                  route: '/recurring-transactions',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
           _buildSectionHeader(context, 'Appearance', Icons.palette_outlined),
           const SizedBox(height: 12),
           Card(
@@ -68,80 +98,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          _buildSectionHeader(
-            context,
-            'Accent Color',
-            Icons.color_lens_outlined,
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colorScheme.outlineVariant, width: 0.5),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.blueGrey,
-                  'Midgard',
-                ),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.lightGreenAccent[400]!,
-                  'Alfheim',
-                ),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.green[700]!,
-                  'Vanaheim',
-                ),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.indigo[700]!,
-                  'Jotunheim',
-                ),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.deepOrange,
-                  'Muspelheim',
-                ),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.lightBlue,
-                  'Niflheim',
-                ),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.blueGrey[900]!,
-                  'Helheim',
-                ),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.yellow[800]!,
-                  'Asgard',
-                ),
-                _buildColorOption(
-                  context,
-                  themeProvider,
-                  Colors.brown[700]!,
-                  'Svartalfheim',
-                ),
-              ],
             ),
           ),
           const SizedBox(height: 28),
@@ -189,11 +145,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 28),
-          _buildSectionHeader(
-            context,
-            'Cloud Sync',
-            Icons.cloud_sync_outlined,
+          _buildSectionHeader(context, 'Security', Icons.lock_outline),
+          const SizedBox(height: 12),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+            ),
+            child: Consumer<SecurityProvider>(
+              builder: (context, securityProvider, child) {
+                return Column(
+                  children: [
+                    SwitchListTile(
+                      secondary: const Icon(Icons.visibility_off_outlined),
+                      title: const Text('Hide balances'),
+                      subtitle: const Text('Mask amounts on money screens'),
+                      value: securityProvider.hideBalances,
+                      onChanged: securityProvider.setHideBalances,
+                    ),
+                    Divider(color: colorScheme.outlineVariant),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.lock_outline_rounded),
+                      title: const Text('App lock'),
+                      subtitle: Text(
+                        securityProvider.hasPin
+                            ? 'Require PIN when opening the app'
+                            : 'Set a PIN before enabling app lock',
+                      ),
+                      value: securityProvider.appLockEnabled,
+                      onChanged: (value) async {
+                        if (value && !securityProvider.hasPin) {
+                          await _showSetPinDialog(context, securityProvider);
+                          return;
+                        }
+                        await securityProvider.setAppLockEnabled(value);
+                      },
+                    ),
+                    Divider(color: colorScheme.outlineVariant),
+                    ListTile(
+                      leading: const Icon(Icons.pin_outlined),
+                      title: Text(
+                        securityProvider.hasPin ? 'Change PIN' : 'Set PIN',
+                      ),
+                      subtitle: const Text('Use a 4-8 digit app lock PIN'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () =>
+                          _showSetPinDialog(context, securityProvider),
+                    ),
+                    if (securityProvider.hasPin) ...[
+                      Divider(color: colorScheme.outlineVariant),
+                      ListTile(
+                        leading: Icon(
+                          Icons.lock_open_outlined,
+                          color: colorScheme.error,
+                        ),
+                        title: Text(
+                          'Remove PIN',
+                          style: TextStyle(color: colorScheme.error),
+                        ),
+                        subtitle: const Text('Disable app lock on this device'),
+                        onTap: () =>
+                            _showClearPinDialog(context, securityProvider),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
           ),
+          const SizedBox(height: 28),
+          _buildSectionHeader(context, 'Cloud Sync', Icons.cloud_sync_outlined),
           const SizedBox(height: 12),
           Card(
             elevation: 0,
@@ -239,10 +261,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       trailing: syncProvider.isConfigured
                           ? IconButton(
                               icon: const Icon(Icons.settings_outlined),
-                              onPressed: () => _showSyncConfigDialog(context, syncProvider),
+                              onPressed: () =>
+                                  _showSyncConfigDialog(context, syncProvider),
                             )
                           : FilledButton.tonal(
-                              onPressed: () => _showSyncConfigDialog(context, syncProvider),
+                              onPressed: () =>
+                                  _showSyncConfigDialog(context, syncProvider),
                               child: const Text('Setup'),
                             ),
                     ),
@@ -251,7 +275,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Divider(color: colorScheme.outlineVariant),
                       // Sync status info
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         child: Row(
                           children: [
                             Expanded(
@@ -260,13 +287,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 children: [
                                   Text(
                                     'Pending Items',
-                                    style: Theme.of(context).textTheme.bodySmall,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
                                   ),
                                   Text(
                                     '${syncProvider.pendingCount}',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -277,15 +307,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 children: [
                                   Text(
                                     'Last Sync',
-                                    style: Theme.of(context).textTheme.bodySmall,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
                                   ),
                                   Text(
                                     syncProvider.lastSyncAt != null
-                                        ? _formatDateTime(syncProvider.lastSyncAt!)
+                                        ? _formatDateTime(
+                                            syncProvider.lastSyncAt!,
+                                          )
                                         : 'Never',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -340,7 +375,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 Icons.sync_outlined,
                                 color: colorScheme.primary,
                               ),
-                        title: Text(syncProvider.isSyncing ? 'Syncing...' : 'Sync Now'),
+                        title: Text(
+                          syncProvider.isSyncing ? 'Syncing...' : 'Sync Now',
+                        ),
                         subtitle: Text(
                           syncProvider.isSyncing
                               ? 'Uploading data to cloud...'
@@ -350,6 +387,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ? null
                             : () => _performSync(context, syncProvider),
                       ),
+
+                      if (syncProvider.syncHistory.isNotEmpty) ...[
+                        Divider(color: colorScheme.outlineVariant),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Recent sync history',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                          ),
+                        ),
+                        for (final item in syncProvider.syncHistory)
+                          ListTile(
+                            dense: true,
+                            leading: Icon(
+                              item['status'] == 'success'
+                                  ? Icons.check_circle_outline
+                                  : Icons.error_outline,
+                              color: item['status'] == 'success'
+                                  ? colorScheme.tertiary
+                                  : colorScheme.error,
+                            ),
+                            title: Text(
+                              item['status'] == 'success'
+                                  ? '${item['syncedCount']} item(s) uploaded'
+                                  : 'Sync failed',
+                            ),
+                            subtitle: Text(
+                              _syncHistorySubtitle(item),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
 
                       Divider(color: colorScheme.outlineVariant),
                       // Disconnect action
@@ -363,7 +436,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(color: colorScheme.error),
                         ),
                         subtitle: const Text('Clear cloud sync configuration'),
-                        onTap: () => _showDisconnectDialog(context, syncProvider),
+                        onTap: () =>
+                            _showDisconnectDialog(context, syncProvider),
                       ),
                     ],
                   ],
@@ -477,7 +551,137 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _showSyncConfigDialog(BuildContext context, SyncProvider syncProvider) {
+  String _syncHistorySubtitle(Map<String, dynamic> item) {
+    final createdAt = DateTime.tryParse('${item['createdAt']}');
+    final time = createdAt != null ? _formatDateTime(createdAt) : 'Unknown time';
+    final message = item['message'] as String?;
+    if (message == null || message.isEmpty || item['status'] == 'success') {
+      return time;
+    }
+    return '$time • $message';
+  }
+
+  Future<void> _showSetPinDialog(
+    BuildContext context,
+    SecurityProvider securityProvider,
+  ) {
+    final pinController = TextEditingController();
+    final confirmController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(securityProvider.hasPin ? 'Change PIN' : 'Set PIN'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: pinController,
+                decoration: const InputDecoration(
+                  labelText: 'PIN',
+                  prefixIcon: Icon(Icons.pin_outlined),
+                  counterText: '',
+                ),
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 8,
+                validator: (value) {
+                  final pin = value?.trim() ?? '';
+                  if (pin.length < 4 || pin.length > 8) {
+                    return 'PIN must be 4-8 digits';
+                  }
+                  if (!RegExp(r'^\d+$').hasMatch(pin)) {
+                    return 'Use digits only';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: confirmController,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm PIN',
+                  prefixIcon: Icon(Icons.check_circle_outline),
+                  counterText: '',
+                ),
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 8,
+                validator: (value) {
+                  if ((value?.trim() ?? '') != pinController.text.trim()) {
+                    return 'PINs do not match';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              Navigator.pop(ctx);
+              await securityProvider.setPin(pinController.text.trim());
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('PIN saved')),
+              );
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    ).whenComplete(() {
+      pinController.dispose();
+      confirmController.dispose();
+    });
+  }
+
+  Future<void> _showClearPinDialog(
+    BuildContext context,
+    SecurityProvider securityProvider,
+  ) {
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove PIN?'),
+        content: const Text('App lock will be disabled on this device.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await securityProvider.clearPin();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('PIN removed')),
+              );
+            },
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showSyncConfigDialog(
+    BuildContext context,
+    SyncProvider syncProvider,
+  ) {
     final urlController = TextEditingController();
     final keyController = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -529,8 +733,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 'Your credentials are stored locally on this device.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -544,7 +748,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               if (formKey.currentState!.validate()) {
                 // Validate URL securely
-                final urlValidation = SecurityUtils.validateSupabaseUrl(urlController.text.trim());
+                final urlValidation = SecurityUtils.validateSupabaseUrl(
+                  urlController.text.trim(),
+                );
                 if (!urlValidation.isValid) {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -570,14 +776,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
 
                 Navigator.pop(ctx);
-                
+
                 // Show loading
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (ctx) => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  builder: (ctx) =>
+                      const Center(child: CircularProgressIndicator()),
                 );
 
                 // Try to configure
@@ -588,13 +793,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 if (mounted) {
                   Navigator.pop(this.context); // Close loading
-                  
+
                   ScaffoldMessenger.of(this.context).showSnackBar(
                     SnackBar(
                       content: Text(
                         success
                             ? 'Cloud sync configured successfully!'
-                            : syncProvider.lastError ?? 'Failed to configure sync',
+                            : syncProvider.lastError ??
+                                  'Failed to configure sync',
                       ),
                       backgroundColor: success ? Colors.green : null,
                     ),
@@ -609,7 +815,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _performSync(BuildContext context, SyncProvider syncProvider) async {
+  Future<void> _performSync(
+    BuildContext context,
+    SyncProvider syncProvider,
+  ) async {
     final result = await syncProvider.syncNow();
 
     if (mounted) {
@@ -633,7 +842,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _showDisconnectDialog(BuildContext context, SyncProvider syncProvider) {
+  Future<void> _showDisconnectDialog(
+    BuildContext context,
+    SyncProvider syncProvider,
+  ) {
     return showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -653,9 +865,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await syncProvider.clearConfiguration();
               if (mounted) {
                 ScaffoldMessenger.of(this.context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Cloud sync disconnected'),
-                  ),
+                  const SnackBar(content: Text('Cloud sync disconnected')),
                 );
               }
             },
@@ -697,53 +907,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildColorOption(
-    BuildContext context,
-    ThemeProvider provider,
-    Color color,
-    String label,
-  ) {
-    final isSelected = provider.seedColor.toARGB32() == color.toARGB32();
-    return GestureDetector(
-      onTap: () => provider.setSeedColor(color),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(14),
-              border: isSelected
-                  ? Border.all(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      width: 2.5,
-                    )
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: isSelected
-                ? Icon(Icons.check_rounded, color: Colors.white, size: 24)
-                : null,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w500),
-          ),
-        ],
+  Widget _buildNavigationTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String route,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: colorScheme.onSecondaryContainer, size: 20),
       ),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.of(context).pushNamed(route),
     );
   }
+
 }
 
 // Simple RadioGroup wrapper widget

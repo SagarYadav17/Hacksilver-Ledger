@@ -17,10 +17,12 @@ import 'providers/theme_provider.dart';
 import 'providers/loan_provider.dart';
 import 'providers/currency_provider.dart';
 import 'providers/sync_provider.dart';
+import 'providers/security_provider.dart';
 import 'screens/loan_list_screen.dart';
 import 'screens/add_loan_screen.dart';
 import 'screens/account_list_screen.dart';
 import 'screens/add_account_screen.dart';
+import 'screens/app_lock_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,14 +32,11 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  ThemeData _buildTheme({
-    required Brightness brightness,
-    required Color seedColor,
-  }) {
+  ThemeData _buildTheme({required Brightness brightness}) {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: seedColor,
+        seedColor: Colors.blueGrey,
         brightness: brightness,
       ),
     );
@@ -165,6 +164,7 @@ class MyApp extends StatelessWidget {
                 ..checkAndGenerateRecurringTransactions(),
         ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => SecurityProvider()),
         ChangeNotifierProvider(create: (_) => SyncProvider()..initialize()),
         ChangeNotifierProxyProvider<DatabaseService, LoanProvider>(
           create: (_) => LoanProvider(DatabaseService()),
@@ -179,14 +179,25 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: _buildTheme(
               brightness: Brightness.light,
-              seedColor: themeProvider.seedColor,
             ),
-            darkTheme: _buildTheme(
-              brightness: Brightness.dark,
-              seedColor: themeProvider.seedColor,
-            ),
+            darkTheme: _buildTheme(brightness: Brightness.dark),
             themeMode: themeProvider.themeMode,
             initialRoute: '/',
+            builder: (context, child) {
+              return Consumer<SecurityProvider>(
+                builder: (context, securityProvider, _) {
+                  if (securityProvider.isLoading) {
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (securityProvider.shouldShowLock) {
+                    return const AppLockScreen();
+                  }
+                  return child ?? const DashboardScreen();
+                },
+              );
+            },
             routes: {
               '/': (context) => const DashboardScreen(),
               '/transactions': (context) => const TransactionListScreen(),

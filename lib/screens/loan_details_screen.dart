@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/loan.dart';
+import '../models/transaction.dart';
 import '../models/category.dart';
 import '../providers/loan_provider.dart';
 import '../providers/transaction_provider.dart';
@@ -51,10 +52,15 @@ class LoanDetailsScreen extends StatelessWidget {
               .where((tx) => tx.loanId == loanId)
               .toList();
 
-          // Sort by date descending
           linkedTransactions.sort((a, b) => b.date.compareTo(a.date));
 
-          final progress = loan.amountPaid / loan.amount;
+          final progress = loan.amount <= 0
+              ? 0.0
+              : loan.amountPaid / loan.amount;
+          final clampedProgress = progress.clamp(0.0, 1.0).toDouble();
+          final accent = loan.type == LoanType.taken
+              ? Colors.deepOrange
+              : Colors.teal;
 
           return Column(
             children: [
@@ -76,15 +82,16 @@ class LoanDetailsScreen extends StatelessWidget {
                 ),
               ),
 
-              // Loan Summary Card
               Card(
                 margin: const EdgeInsets.all(16),
-                elevation: 4,
+                elevation: 0,
+                color: accent.withValues(alpha: 0.08),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(24),
+                  side: BorderSide(color: accent.withValues(alpha: 0.18)),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -95,7 +102,7 @@ class LoanDetailsScreen extends StatelessWidget {
                             loan.title,
                             style: const TextStyle(
                               fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                           Container(
@@ -106,7 +113,7 @@ class LoanDetailsScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: loan.isClosed
                                   ? Colors.green.shade100
-                                  : Colors.orange.shade100,
+                                  : accent.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -114,7 +121,7 @@ class LoanDetailsScreen extends StatelessWidget {
                               style: TextStyle(
                                 color: loan.isClosed
                                     ? Colors.green.shade800
-                                    : Colors.orange.shade800,
+                                    : accent,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -136,26 +143,22 @@ class LoanDetailsScreen extends StatelessWidget {
                           ),
                           _buildsummaryItem(
                             'Remaining',
-                            '$currencySymbol${(loan.amount - loan.amountPaid).toStringAsFixed(0)}',
+                            '$currencySymbol${(loan.amount - loan.amountPaid).clamp(0.0, loan.amount).toStringAsFixed(0)}',
                             color: Colors.red,
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       LinearProgressIndicator(
-                        value: progress.clamp(0.0, 1.0),
+                        value: clampedProgress,
                         backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          loan.type == LoanType.taken
-                              ? Colors.red
-                              : Colors.green,
-                        ),
+                        valueColor: AlwaysStoppedAnimation<Color>(accent),
                         minHeight: 10,
                         borderRadius: BorderRadius.circular(5),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${(progress * 100).toStringAsFixed(1)}% Paid',
+                        '${(clampedProgress * 100).toStringAsFixed(1)}% Paid',
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontSize: 12,
@@ -164,6 +167,13 @@ class LoanDetailsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+
+              _EmiTimelineCard(
+                loan: loan,
+                transactions: linkedTransactions,
+                currencySymbol: currencySymbol,
+                accent: accent,
               ),
 
               const Padding(
@@ -211,7 +221,11 @@ class LoanDetailsScreen extends StatelessWidget {
                                 category.colorValue,
                               ).withValues(alpha: 0.2),
                               child: Icon(
-                                categoryIconData(category.iconCode, fontFamily: category.fontFamily, fontPackage: category.fontPackage),
+                                categoryIconData(
+                                  category.iconCode,
+                                  fontFamily: category.fontFamily,
+                                  fontPackage: category.fontPackage,
+                                ),
                                 color: Color(category.colorValue),
                               ),
                             ),
@@ -264,6 +278,148 @@ class LoanDetailsScreen extends StatelessWidget {
             color: color,
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _EmiTimelineCard extends StatelessWidget {
+  final Loan loan;
+  final List<Transaction> transactions;
+  final String currencySymbol;
+  final Color accent;
+
+  const _EmiTimelineCard({
+    required this.loan,
+    required this.transactions,
+    required this.currencySymbol,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final paidEmis = loan.emiAmount <= 0
+        ? transactions.length
+        : (loan.amountPaid / loan.emiAmount).floor();
+    final cappedPaidEmis = paidEmis.clamp(0, loan.tenureMonths).toInt();
+    final visibleMonths = loan.tenureMonths.clamp(0, 12).toInt();
+    final nextEmi = loan.isClosed ? loan.tenureMonths : cappedPaidEmis + 1;
+    final nextDueDate = DateTime(
+      loan.startDate.year,
+      loan.startDate.month + cappedPaidEmis,
+      loan.startDate.day,
+    );
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.timeline_rounded, color: accent),
+                const SizedBox(width: 8),
+                const Text(
+                  'EMI timeline',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _TimelineStat(
+                    label: 'Paid EMIs',
+                    value: '$cappedPaidEmis/${loan.tenureMonths}',
+                  ),
+                ),
+                Expanded(
+                  child: _TimelineStat(
+                    label: loan.isClosed ? 'Closed' : 'Next due',
+                    value: loan.isClosed
+                        ? 'Done'
+                        : DateFormat.MMMd().format(nextDueDate),
+                  ),
+                ),
+                Expanded(
+                  child: _TimelineStat(
+                    label: 'Next EMI',
+                    value: loan.isClosed
+                        ? '-'
+                        : '#$nextEmi • $currencySymbol${loan.emiAmount.toStringAsFixed(0)}',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: loan.tenureMonths <= 0
+                    ? 0.0
+                    : (cappedPaidEmis / loan.tenureMonths)
+                          .clamp(0.0, 1.0)
+                          .toDouble(),
+                minHeight: 8,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(accent),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: List.generate(visibleMonths, (index) {
+                final isPaid = index < cappedPaidEmis;
+                return Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: isPaid ? accent : Colors.grey.shade200,
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            ),
+            if (loan.tenureMonths > 12) ...[
+              const SizedBox(height: 8),
+              Text(
+                '+${loan.tenureMonths - 12} more months',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TimelineStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _TimelineStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        ),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
       ],
     );
   }

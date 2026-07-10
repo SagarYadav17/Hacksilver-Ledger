@@ -25,6 +25,15 @@ class RecurringTransactionProvider with ChangeNotifier {
     await fetchRecurringTransactions();
   }
 
+  Future<void> toggleRecurringTransaction(
+    RecurringTransaction transaction,
+  ) async {
+    await _dbService.updateRecurringTransaction(
+      transaction.copyWith(isActive: !transaction.isActive),
+    );
+    await fetchRecurringTransactions();
+  }
+
   Future<void> checkAndGenerateRecurringTransactions() async {
     await fetchRecurringTransactions();
     final now = DateTime.now();

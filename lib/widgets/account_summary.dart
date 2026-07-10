@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/account_provider.dart';
 import '../providers/currency_provider.dart';
+import '../providers/security_provider.dart';
 import '../models/account.dart';
 
 class AccountSummary extends StatelessWidget {
@@ -11,6 +12,7 @@ class AccountSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currency = Provider.of<CurrencyProvider>(context).currency;
+    final securityProvider = Provider.of<SecurityProvider>(context);
     final currencySymbol = _getCurrencySymbol(currency);
     final formatter = NumberFormat.currency(
       symbol: currencySymbol,
@@ -98,7 +100,9 @@ class AccountSummary extends StatelessWidget {
                                 ],
                               ),
                               Text(
-                                formatter.format(account.balance),
+                                securityProvider.maskAmount(
+                                  formatter.format(account.balance),
+                                ),
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleMedium

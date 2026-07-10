@@ -7,6 +7,7 @@ class DbConstants {
   static const String tableRecurringTransactions = 'recurring_transactions';
   static const String tableLoans = 'loans';
   static const String tableSyncMetadata = 'sync_metadata';
+  static const String tableSyncHistory = 'sync_history';
 
   // Common columns
   static const String columnId = 'id';
@@ -66,8 +67,12 @@ class DbConstants {
   static const String columnLastSyncAt = 'lastSyncAt';
   static const String columnSupabaseUrl = 'supabaseUrl';
   static const String columnSupabaseKey = 'supabaseKey';
+  static const String columnSyncHistoryStatus = 'status';
+  static const String columnSyncHistorySyncedCount = 'syncedCount';
+  static const String columnSyncHistoryMessage = 'message';
+  static const String columnSyncHistoryCreatedAt = 'createdAt';
 
   // Database name
   static const String databaseName = 'hacksilver_ledger.db';
-  static const int databaseVersion = 2; // Bumped for sync migration
+  static const int databaseVersion = 3; // Bumped for sync history
 }
