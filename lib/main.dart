@@ -12,12 +12,16 @@ import 'screens/add_transaction_screen.dart';
 import 'screens/category_list_screen.dart';
 import 'screens/recurring_transaction_list_screen.dart';
 import 'screens/add_recurring_transaction_screen.dart';
-import 'screens/settings_screen.dart';
+import 'screens/more_screen.dart';
+import 'screens/sync_backup_screen.dart';
+import 'screens/diagnostics_screen.dart';
+import 'screens/analytics_screen.dart';
 import 'providers/theme_provider.dart';
 import 'providers/loan_provider.dart';
 import 'providers/currency_provider.dart';
 import 'providers/sync_provider.dart';
 import 'providers/security_provider.dart';
+import 'providers/auth_provider.dart';
 import 'screens/loan_list_screen.dart';
 import 'screens/add_loan_screen.dart';
 import 'screens/account_list_screen.dart';
@@ -32,11 +36,14 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  ThemeData _buildTheme({required Brightness brightness}) {
+  ThemeData _buildTheme({
+    required Brightness brightness,
+    required Color seedColor,
+  }) {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blueGrey,
+        seedColor: seedColor,
         brightness: brightness,
       ),
     );
@@ -137,9 +144,42 @@ class MyApp extends StatelessWidget {
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(24),
           ),
         ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.secondaryContainer,
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return TextStyle(
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected
+                ? colorScheme.onSecondaryContainer
+                : colorScheme.onSurfaceVariant,
+          );
+        }),
       ),
     );
   }
@@ -165,7 +205,12 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SecurityProvider()),
-        ChangeNotifierProvider(create: (_) => SyncProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()..initialize()),
+        ChangeNotifierProxyProvider<AuthProvider, SyncProvider>(
+          create: (_) => SyncProvider(),
+          update: (_, auth, previous) =>
+              (previous ?? SyncProvider())..bindAuth(auth),
+        ),
         ChangeNotifierProxyProvider<DatabaseService, LoanProvider>(
           create: (_) => LoanProvider(DatabaseService()),
           update: (_, db, previous) => previous ?? LoanProvider(db),
@@ -179,8 +224,12 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: _buildTheme(
               brightness: Brightness.light,
+              seedColor: themeProvider.seedColor,
             ),
-            darkTheme: _buildTheme(brightness: Brightness.dark),
+            darkTheme: _buildTheme(
+              brightness: Brightness.dark,
+              seedColor: themeProvider.seedColor,
+            ),
             themeMode: themeProvider.themeMode,
             initialRoute: '/',
             builder: (context, child) {
@@ -211,7 +260,10 @@ class MyApp extends StatelessWidget {
               '/add-loan': (context) => const AddLoanScreen(),
               '/accounts': (context) => const AccountListScreen(),
               '/add-account': (context) => const AddAccountScreen(),
-              '/settings': (context) => const SettingsScreen(),
+              '/more': (context) => const MoreScreen(),
+              '/sync-backup': (context) => const SyncBackupScreen(),
+              '/diagnostics': (context) => const DiagnosticsScreen(),
+              '/analytics': (context) => const AnalyticsScreen(),
             },
           );
         },

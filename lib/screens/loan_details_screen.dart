@@ -10,8 +10,10 @@ import '../providers/category_provider.dart';
 import '../providers/currency_provider.dart';
 import '../constants/app_constants.dart';
 import '../utils/icon_utils.dart';
+import '../utils/amount_colors.dart';
 import 'add_transaction_screen.dart';
 import 'add_loan_screen.dart';
+import 'loan_list_screen.dart';
 
 class LoanDetailsScreen extends StatelessWidget {
   final int loanId;
@@ -58,9 +60,8 @@ class LoanDetailsScreen extends StatelessWidget {
               ? 0.0
               : loan.amountPaid / loan.amount;
           final clampedProgress = progress.clamp(0.0, 1.0).toDouble();
-          final accent = loan.type == LoanType.taken
-              ? Colors.deepOrange
-              : Colors.teal;
+          final colorScheme = Theme.of(context).colorScheme;
+          final accent = colorScheme.primary;
 
           return Column(
             children: [
@@ -85,89 +86,137 @@ class LoanDetailsScreen extends StatelessWidget {
               Card(
                 margin: const EdgeInsets.all(16),
                 elevation: 0,
-                color: accent.withValues(alpha: 0.08),
+                color: colorScheme.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
-                  side: BorderSide(color: accent.withValues(alpha: 0.18)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(18.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            loan.title,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: loan.isClosed
-                                  ? Colors.green.shade100
-                                  : accent.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              loan.isClosed ? 'CLOSED' : 'ACTIVE',
-                              style: TextStyle(
-                                color: loan.isClosed
-                                    ? Colors.green.shade800
-                                    : accent,
-                                fontWeight: FontWeight.bold,
+                      SizedBox(
+                        width: 76,
+                        height: 76,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              value: clampedProgress,
+                              strokeWidth: 7,
+                              backgroundColor: colorScheme.onPrimary.withValues(
+                                alpha: 0.2,
+                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colorScheme.onPrimary,
                               ),
                             ),
-                          ),
-                        ],
+                            Text(
+                              '${(clampedProgress * 100).toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildsummaryItem(
-                            'Amount',
-                            '$currencySymbol${loan.amount.toStringAsFixed(0)}',
-                          ),
-                          _buildsummaryItem(
-                            'Paid',
-                            '$currencySymbol${loan.amountPaid.toStringAsFixed(0)}',
-                            color: Colors.green,
-                          ),
-                          _buildsummaryItem(
-                            'Remaining',
-                            '$currencySymbol${(loan.amount - loan.amountPaid).clamp(0.0, loan.amount).toStringAsFixed(0)}',
-                            color: Colors.red,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      LinearProgressIndicator(
-                        value: clampedProgress,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(accent),
-                        minHeight: 10,
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${(clampedProgress * 100).toStringAsFixed(1)}% Paid',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    loan.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                                if (!loan.isClosed)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.onPrimary.withValues(
+                                        alpha: 0.18,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      'ACTIVE',
+                                      style: TextStyle(
+                                        color: colorScheme.onPrimary,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Remaining $currencySymbol${(loan.amount - loan.amountPaid).clamp(0.0, loan.amount).toStringAsFixed(0)} of $currencySymbol${loan.amount.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                color: colorScheme.onPrimary.withValues(
+                                  alpha: 0.85,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
+
+              if (!loan.isClosed)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.notifications_active_outlined,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'EMI $currencySymbol${loan.emiAmount.toStringAsFixed(0)} due next',
+                            style: TextStyle(
+                              color: colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        FilledButton(
+                          onPressed: () => showLoanPaymentDialog(
+                            context,
+                            loan,
+                            loanProvider,
+                          ),
+                          child: const Text('Pay'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               _EmiTimelineCard(
                 loan: loan,
@@ -235,11 +284,10 @@ class LoanDetailsScreen extends StatelessWidget {
                               '$currencySymbol${tx.amount.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: tx.type == CategoryType.income
-                                    ? Colors.green
-                                    : tx.type == CategoryType.expense
-                                    ? Colors.red
-                                    : Colors.blue,
+                                color: amountColorForType(
+                                  Theme.of(context).colorScheme,
+                                  tx.type,
+                                ),
                               ),
                             ),
                             onTap: () {
@@ -261,26 +309,6 @@ class LoanDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildsummaryItem(String label, String value, {Color? color}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 class _EmiTimelineCard extends StatelessWidget {
@@ -310,12 +338,14 @@ class _EmiTimelineCard extends StatelessWidget {
       loan.startDate.day,
     );
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -360,42 +390,35 @@ class _EmiTimelineCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: loan.tenureMonths <= 0
-                    ? 0.0
-                    : (cappedPaidEmis / loan.tenureMonths)
-                          .clamp(0.0, 1.0)
-                          .toDouble(),
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(accent),
+            for (var index = 0; index < visibleMonths; index++)
+              _EmiStepRow(
+                emiNumber: index + 1,
+                dueDate: DateTime(
+                  loan.startDate.year,
+                  loan.startDate.month + index + 1,
+                  loan.startDate.day,
+                ),
+                amountLabel:
+                    '$currencySymbol${loan.emiAmount.toStringAsFixed(0)}',
+                status: index < cappedPaidEmis
+                    ? _EmiStepStatus.paid
+                    : index == cappedPaidEmis
+                    ? _EmiStepStatus.next
+                    : _EmiStepStatus.upcoming,
+                accent: accent,
+                isLast: index == visibleMonths - 1,
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: List.generate(visibleMonths, (index) {
-                final isPaid = index < cappedPaidEmis;
-                return Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: isPaid ? accent : Colors.grey.shade200,
-                    shape: BoxShape.circle,
+            if (loan.tenureMonths > 12)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '+${loan.tenureMonths - 12} more months',
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 12,
                   ),
-                );
-              }),
-            ),
-            if (loan.tenureMonths > 12) ...[
-              const SizedBox(height: 8),
-              Text(
-                '+${loan.tenureMonths - 12} more months',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
               ),
-            ],
           ],
         ),
       ),
@@ -411,16 +434,103 @@ class _TimelineStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
         ),
         const SizedBox(height: 4),
         Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
       ],
+    );
+  }
+}
+
+enum _EmiStepStatus { paid, next, upcoming }
+
+class _EmiStepRow extends StatelessWidget {
+  final int emiNumber;
+  final DateTime dueDate;
+  final String amountLabel;
+  final _EmiStepStatus status;
+  final Color accent;
+  final bool isLast;
+
+  const _EmiStepRow({
+    required this.emiNumber,
+    required this.dueDate,
+    required this.amountLabel,
+    required this.status,
+    required this.accent,
+    required this.isLast,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isPaid = status == _EmiStepStatus.paid;
+    final isNext = status == _EmiStepStatus.next;
+    final textColor = status == _EmiStepStatus.upcoming
+        ? colorScheme.onSurfaceVariant
+        : colorScheme.onSurface;
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Icon(
+                isPaid ? Icons.check_circle : Icons.circle_outlined,
+                size: 20,
+                color: isPaid
+                    ? accent
+                    : isNext
+                    ? accent
+                    : colorScheme.outlineVariant,
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 1.5,
+                    color: colorScheme.outlineVariant,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'EMI #$emiNumber',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: isNext ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    DateFormat.MMMd().format(dueDate),
+                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    amountLabel,
+                    style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/account_list_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/loan_list_screen.dart';
-import '../screens/settings_screen.dart';
+import '../screens/more_screen.dart';
 import '../screens/transaction_list_screen.dart';
 
 class AppBottomNav extends StatelessWidget {
@@ -15,7 +15,7 @@ class AppBottomNav extends StatelessWidget {
     '/transactions',
     '/loans',
     '/accounts',
-    '/settings',
+    '/more',
   ];
 
   int get _selectedIndex {
@@ -77,8 +77,8 @@ class AppBottomNav extends StatelessWidget {
         return const LoanListScreen();
       case '/accounts':
         return const AccountListScreen();
-      case '/settings':
-        return const SettingsScreen();
+      case '/more':
+        return const MoreScreen();
       case '/':
       default:
         return const DashboardScreen();

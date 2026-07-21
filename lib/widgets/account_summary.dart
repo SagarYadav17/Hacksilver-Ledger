@@ -5,6 +5,7 @@ import '../providers/account_provider.dart';
 import '../providers/currency_provider.dart';
 import '../providers/security_provider.dart';
 import '../models/account.dart';
+import '../utils/amount_colors.dart';
 
 class AccountSummary extends StatelessWidget {
   const AccountSummary({super.key});
@@ -107,7 +108,10 @@ class AccountSummary extends StatelessWidget {
                                     .textTheme
                                     .titleMedium
                                     ?.copyWith(
-                                      color: _getBalanceColor(account.balance),
+                                      color: _getBalanceColor(
+                                        colorScheme,
+                                        account.balance,
+                                      ),
                                       fontWeight: FontWeight.bold,
                                     ),
                               ),
@@ -139,9 +143,9 @@ class AccountSummary extends StatelessWidget {
     }
   }
 
-  Color _getBalanceColor(double balance) {
-    if (balance >= 0) return Colors.green.shade700;
-    return Colors.red.shade700;
+  Color _getBalanceColor(ColorScheme colorScheme, double balance) {
+    if (balance >= 0) return incomeColor(colorScheme);
+    return expenseColor(colorScheme);
   }
 
   String _getCurrencySymbol(String currencyCode) {

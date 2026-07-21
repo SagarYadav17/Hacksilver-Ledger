@@ -55,6 +55,36 @@ class DatabaseService {
     if (oldVersion < 3) {
       await _createSyncHistoryTable(db);
     }
+    if (oldVersion < 4) {
+      try {
+        await db.execute(
+          'ALTER TABLE ${DbConstants.tableCategories} ADD COLUMN ${DbConstants.columnCategorySortOrder} INTEGER DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE ${DbConstants.tableCategories} ADD COLUMN ${DbConstants.columnCategoryIsArchived} INTEGER DEFAULT 0',
+        );
+      } catch (e) {
+        // Columns may already exist, ignore error
+      }
+    }
+    if (oldVersion < 5) {
+      try {
+        await db.execute(
+          'ALTER TABLE ${DbConstants.tableTransactions} ADD COLUMN ${DbConstants.columnTransactionRecurringId} INTEGER',
+        );
+      } catch (e) {
+        // Column may already exist, ignore error
+      }
+    }
+    if (oldVersion < 6) {
+      try {
+        await db.execute(
+          'ALTER TABLE ${DbConstants.tableSyncMetadata} ADD COLUMN ${DbConstants.columnPocketBaseUrl} TEXT',
+        );
+      } catch (e) {
+        // Column may already exist, ignore error
+      }
+    }
   }
 
   Future<void> _addSyncColumns(Database db, String tableName) async {
@@ -79,6 +109,8 @@ class DatabaseService {
         ${DbConstants.columnCategoryColorValue} INTEGER,
         ${DbConstants.columnCategoryType} INTEGER,
         ${DbConstants.columnCategoryIsCustom} INTEGER,
+        ${DbConstants.columnCategorySortOrder} INTEGER DEFAULT 0,
+        ${DbConstants.columnCategoryIsArchived} INTEGER DEFAULT 0,
         ${DbConstants.columnSyncId} TEXT,
         ${DbConstants.columnUpdatedAt} TEXT,
         ${DbConstants.columnDeletedAt} TEXT,
@@ -117,6 +149,7 @@ class DatabaseService {
         ${DbConstants.columnTransactionOriginalCurrency} TEXT,
         ${DbConstants.columnTransactionLoanId} INTEGER,
         ${DbConstants.columnTransactionTransferAccountId} INTEGER,
+        ${DbConstants.columnTransactionRecurringId} INTEGER,
         ${DbConstants.columnSyncId} TEXT,
         ${DbConstants.columnUpdatedAt} TEXT,
         ${DbConstants.columnDeletedAt} TEXT,
@@ -176,16 +209,15 @@ class DatabaseService {
     await db.execute('''
       CREATE TABLE ${DbConstants.tableSyncMetadata}(
         ${DbConstants.columnId} INTEGER PRIMARY KEY,
-        ${DbConstants.columnSupabaseUrl} TEXT,
-        ${DbConstants.columnSupabaseKey} TEXT,
+        ${DbConstants.columnPocketBaseUrl} TEXT,
         ${DbConstants.columnLastSyncAt} TEXT
       )
     ''');
-    
+
     // Insert default row
     await db.execute('''
-      INSERT INTO ${DbConstants.tableSyncMetadata} (${DbConstants.columnId}, ${DbConstants.columnSupabaseUrl}, ${DbConstants.columnSupabaseKey}, ${DbConstants.columnLastSyncAt})
-      VALUES (1, NULL, NULL, NULL)
+      INSERT INTO ${DbConstants.tableSyncMetadata} (${DbConstants.columnId}, ${DbConstants.columnPocketBaseUrl}, ${DbConstants.columnLastSyncAt})
+      VALUES (1, NULL, NULL)
     ''');
   }
 
@@ -220,6 +252,20 @@ class DatabaseService {
       map,
       where: '${DbConstants.columnId} = ?',
       whereArgs: [category.id],
+    );
+  }
+
+  Future<void> reassignCategory(int fromCategoryId, int toCategoryId) async {
+    final db = await database;
+    await db.update(
+      DbConstants.tableTransactions,
+      {
+        DbConstants.columnTransactionCategoryId: toCategoryId,
+        DbConstants.columnUpdatedAt: DateTime.now().toIso8601String(),
+        DbConstants.columnSyncStatus: 'pending',
+      },
+      where: '${DbConstants.columnTransactionCategoryId} = ?',
+      whereArgs: [fromCategoryId],
     );
   }
 
@@ -542,14 +588,11 @@ class DatabaseService {
     return null;
   }
 
-  Future<void> saveSyncCredentials(String url, String key) async {
+  Future<void> savePocketBaseUrl(String url) async {
     final db = await database;
     await db.update(
       DbConstants.tableSyncMetadata,
-      {
-        DbConstants.columnSupabaseUrl: url,
-        DbConstants.columnSupabaseKey: key,
-      },
+      {DbConstants.columnPocketBaseUrl: url},
       where: '${DbConstants.columnId} = ?',
       whereArgs: [1],
     );
@@ -572,8 +615,7 @@ class DatabaseService {
     await db.update(
       DbConstants.tableSyncMetadata,
       {
-        DbConstants.columnSupabaseUrl: null,
-        DbConstants.columnSupabaseKey: null,
+        DbConstants.columnPocketBaseUrl: null,
         DbConstants.columnLastSyncAt: null,
       },
       where: '${DbConstants.columnId} = ?',

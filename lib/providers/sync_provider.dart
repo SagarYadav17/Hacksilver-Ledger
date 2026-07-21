@@ -1,103 +1,52 @@
 import 'package:flutter/material.dart';
+import 'auth_provider.dart';
 import '../services/sync_service.dart';
 import '../services/database_service.dart';
 
-/// Provider for sync state and operations
+/// Provider for sync state and operations. Auth/connection lifecycle lives
+/// in AuthProvider; this provider only cares about running syncs against
+/// whichever authenticated client AuthProvider currently holds.
 class SyncProvider extends ChangeNotifier {
   final SyncService _syncService = SyncService();
   final DatabaseService _dbService = DatabaseService();
 
   bool _isSyncing = false;
-  bool _isConfigured = false;
+  bool _boundLoggedIn = false;
   int _pendingCount = 0;
   DateTime? _lastSyncAt;
-  String? _supabaseUrl;
   String? _lastError;
   SyncResult? _lastResult;
   List<Map<String, dynamic>> _syncHistory = [];
 
   // Getters
   bool get isSyncing => _isSyncing;
-  bool get isConfigured => _isConfigured;
   int get pendingCount => _pendingCount;
   DateTime? get lastSyncAt => _lastSyncAt;
-  String? get supabaseUrl => _supabaseUrl;
   String? get lastError => _lastError;
   SyncResult? get lastResult => _lastResult;
   List<Map<String, dynamic>> get syncHistory => _syncHistory;
+  bool get hasErrors => _lastResult?.hasErrors == true || _lastError != null;
 
-  /// Initialize and load configuration
-  Future<void> initialize() async {
-    await _loadConfiguration();
-    await _updatePendingCount();
-    await _loadSyncHistory();
+  /// Called by the ChangeNotifierProxyProvider whenever AuthProvider changes
+  /// (login, logout, or session restore) so sync always targets the current
+  /// authenticated client.
+  void bindAuth(AuthProvider auth) {
+    _syncService.bindClient(auth.client);
+
+    final justLoggedIn = auth.isLoggedIn && !_boundLoggedIn;
+    _boundLoggedIn = auth.isLoggedIn;
+
+    if (justLoggedIn) {
+      _loadLastSyncAt();
+      _updatePendingCount();
+      _loadSyncHistory();
+    }
   }
 
-  /// Load saved credentials and sync status
-  Future<void> _loadConfiguration() async {
-    try {
-      final metadata = await _dbService.getSyncMetadata();
-      if (metadata != null) {
-        _supabaseUrl = metadata['supabaseUrl'] as String?;
-        final supabaseKey = metadata['supabaseKey'] as String?;
-        
-        if (_supabaseUrl != null && supabaseKey != null && _supabaseUrl!.isNotEmpty) {
-          await _syncService.initialize(_supabaseUrl!, supabaseKey);
-          _isConfigured = _syncService.isInitialized;
-        }
-
-        final lastSync = metadata['lastSyncAt'] as String?;
-        if (lastSync != null) {
-          _lastSyncAt = DateTime.parse(lastSync);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error loading sync configuration: $e');
-      _isConfigured = false;
-    }
-    notifyListeners();
-  }
-
-  /// Configure Supabase credentials
-  Future<bool> configureSupabase(String url, String anonKey) async {
-    try {
-      await _syncService.initialize(url, anonKey);
-      
-      if (_syncService.isInitialized) {
-        _isConfigured = true;
-        _supabaseUrl = url;
-        _lastError = null;
-        
-        // Save credentials to database
-        await _dbService.saveSyncCredentials(url, anonKey);
-        
-        notifyListeners();
-        return true;
-      }
-    } catch (e) {
-      _lastError = 'Failed to initialize: $e';
-      _isConfigured = false;
-    }
-    
-    notifyListeners();
-    return false;
-  }
-
-  /// Clear saved credentials
-  Future<void> clearConfiguration() async {
-    try {
-      await _syncService.dispose();
-    } catch (e) {
-      // Ignore dispose errors
-    }
-    
-    await _dbService.clearSyncCredentials();
-    _isConfigured = false;
-    _supabaseUrl = null;
-    _lastSyncAt = null;
-    _lastError = null;
-    _lastResult = null;
-    await _loadSyncHistory();
+  Future<void> _loadLastSyncAt() async {
+    final metadata = await _dbService.getSyncMetadata();
+    final lastSync = metadata?['lastSyncAt'] as String?;
+    _lastSyncAt = lastSync != null ? DateTime.parse(lastSync) : null;
     notifyListeners();
   }
 
@@ -117,8 +66,8 @@ class SyncProvider extends ChangeNotifier {
       return SyncResult.error('Sync already in progress');
     }
 
-    if (!_isConfigured) {
-      return SyncResult.error('Supabase not configured');
+    if (!_syncService.isInitialized) {
+      return SyncResult.error('Not logged in');
     }
 
     _isSyncing = true;
@@ -127,11 +76,10 @@ class SyncProvider extends ChangeNotifier {
 
     try {
       final result = await _syncService.performSync();
-      
+
       _lastResult = result;
-      
+
       if (result.success) {
-        _lastSyncAt = DateTime.now();
         _lastError = null;
       } else {
         _lastError = result.errorMessage;
@@ -147,12 +95,7 @@ class SyncProvider extends ChangeNotifier {
 
       await _updatePendingCount();
       await _loadSyncHistory();
-      
-      // Refresh lastSyncAt from database
-      final metadata = await _dbService.getSyncMetadata();
-      if (metadata != null && metadata['lastSyncAt'] != null) {
-        _lastSyncAt = DateTime.parse(metadata['lastSyncAt'] as String);
-      }
+      await _loadLastSyncAt();
 
       return result;
     } catch (e) {
@@ -184,7 +127,4 @@ class SyncProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
-
-  /// Check if there are any sync conflicts
-  bool get hasErrors => _lastResult?.hasErrors == true || _lastError != null;
 }

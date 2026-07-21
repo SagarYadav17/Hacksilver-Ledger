@@ -11,7 +11,9 @@ class Category implements SyncableModel {
   final int colorValue; // Store Color.value
   final CategoryType type;
   final bool isCustom; // To distinguish between default and user-added
-  
+  final int sortOrder;
+  final bool isArchived;
+
   // Sync fields
   @override
   final String? syncId;
@@ -31,6 +33,8 @@ class Category implements SyncableModel {
     required this.colorValue,
     required this.type,
     this.isCustom = true,
+    this.sortOrder = 0,
+    this.isArchived = false,
     this.syncId,
     this.updatedAt,
     this.deletedAt,
@@ -46,6 +50,8 @@ class Category implements SyncableModel {
     int? colorValue,
     CategoryType? type,
     bool? isCustom,
+    int? sortOrder,
+    bool? isArchived,
     String? syncId,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -60,6 +66,8 @@ class Category implements SyncableModel {
       colorValue: colorValue ?? this.colorValue,
       type: type ?? this.type,
       isCustom: isCustom ?? this.isCustom,
+      sortOrder: sortOrder ?? this.sortOrder,
+      isArchived: isArchived ?? this.isArchived,
       syncId: syncId ?? this.syncId,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -77,6 +85,8 @@ class Category implements SyncableModel {
       'colorValue': colorValue,
       'type': type.index, // Store as int
       'isCustom': isCustom ? 1 : 0,
+      'sortOrder': sortOrder,
+      'isArchived': isArchived ? 1 : 0,
       'syncId': syncId,
       'updatedAt': updatedAt?.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
@@ -94,6 +104,8 @@ class Category implements SyncableModel {
       colorValue: map['colorValue'],
       type: CategoryType.values[map['type']],
       isCustom: map['isCustom'] == 1,
+      sortOrder: map['sortOrder'] ?? 0,
+      isArchived: map['isArchived'] == 1,
       syncId: map['syncId'],
       updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
       deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,

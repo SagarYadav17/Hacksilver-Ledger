@@ -14,7 +14,8 @@ class Transaction implements SyncableModel {
   final double? originalAmount;
   final String? originalCurrency;
   final int? loanId;
-  
+  final int? recurringId;
+
   // Sync fields
   @override
   final String? syncId;
@@ -38,6 +39,7 @@ class Transaction implements SyncableModel {
     this.originalAmount,
     this.originalCurrency,
     this.loanId,
+    this.recurringId,
     this.syncId,
     this.updatedAt,
     this.deletedAt,
@@ -57,6 +59,7 @@ class Transaction implements SyncableModel {
     double? originalAmount,
     String? originalCurrency,
     int? loanId,
+    int? recurringId,
     String? syncId,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -75,6 +78,7 @@ class Transaction implements SyncableModel {
       originalAmount: originalAmount ?? this.originalAmount,
       originalCurrency: originalCurrency ?? this.originalCurrency,
       loanId: loanId ?? this.loanId,
+      recurringId: recurringId ?? this.recurringId,
       syncId: syncId ?? this.syncId,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -96,6 +100,7 @@ class Transaction implements SyncableModel {
       'originalAmount': originalAmount,
       'originalCurrency': originalCurrency,
       'loanId': loanId,
+      'recurringId': recurringId,
       'syncId': syncId,
       'updatedAt': updatedAt?.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
@@ -117,6 +122,7 @@ class Transaction implements SyncableModel {
       originalAmount: map['originalAmount'],
       originalCurrency: map['originalCurrency'],
       loanId: map['loanId'],
+      recurringId: map['recurringId'],
       syncId: map['syncId'],
       updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
       deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
@@ -142,6 +148,7 @@ class Transaction implements SyncableModel {
       'original_amount': originalAmount,
       'original_currency': originalCurrency,
       'loan_id': loanId,
+      'recurring_id': recurringId,
       'updated_at': (updatedAt ?? DateTime.now()).toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
     };

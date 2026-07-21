@@ -55,6 +55,7 @@ class RecurringTransactionProvider with ChangeNotifier {
             categoryId: recurring.categoryId,
             accountId: recurring.accountId,
             notes: recurring.notes,
+            recurringId: recurring.id,
           );
 
           await _dbService.insertTransaction(newTx);

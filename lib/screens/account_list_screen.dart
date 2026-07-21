@@ -4,9 +4,14 @@ import 'package:provider/provider.dart';
 import '../providers/account_provider.dart';
 import '../providers/currency_provider.dart';
 import '../providers/security_provider.dart';
+import '../providers/transaction_provider.dart';
 import '../models/account.dart';
+import '../models/category.dart';
 import 'add_account_screen.dart';
+import 'add_transaction_screen.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/sparkline.dart';
+import '../utils/amount_colors.dart';
 
 class AccountListScreen extends StatelessWidget {
   const AccountListScreen({super.key});
@@ -16,8 +21,8 @@ class AccountListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Accounts')),
       bottomNavigationBar: const AppBottomNav(currentRoute: '/accounts'),
-      body: Consumer2<AccountProvider, CurrencyProvider>(
-        builder: (context, provider, currencyProvider, child) {
+      body: Consumer3<AccountProvider, CurrencyProvider, TransactionProvider>(
+        builder: (context, provider, currencyProvider, txProvider, child) {
           final accounts = provider.accounts;
           final colorScheme = Theme.of(context).colorScheme;
           final securityProvider = context.watch<SecurityProvider>();
@@ -265,15 +270,20 @@ class AccountListScreen extends StatelessWidget {
                                         .titleMedium
                                         ?.copyWith(
                                           color: _getBalanceColor(
+                                            colorScheme,
                                             account.balance,
                                           ),
                                           fontWeight: FontWeight.bold,
                                         ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Icon(
-                                    Icons.chevron_right_rounded,
-                                    color: colorScheme.onSurfaceVariant,
+                                  Sparkline(
+                                    values: _recentDeltas(
+                                      txProvider,
+                                      account.id,
+                                    ),
+                                    barColor: incomeColor(colorScheme),
+                                    downColor: expenseColor(colorScheme),
                                   ),
                                 ],
                               ),
@@ -305,7 +315,32 @@ class AccountListScreen extends StatelessWidget {
       return;
     }
 
-    Navigator.of(context).pushNamed('/add-transaction');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const AddTransactionScreen(
+          initialType: CategoryType.transfer,
+        ),
+      ),
+    );
+  }
+
+  List<double> _recentDeltas(TransactionProvider txProvider, int? accountId) {
+    if (accountId == null) return const [];
+    final related = txProvider.transactions
+        .where((tx) => tx.accountId == accountId || tx.transferAccountId == accountId)
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    final recent = related.take(4).toList().reversed;
+    return [
+      for (final tx in recent)
+        switch (tx.type) {
+          CategoryType.income => tx.amount,
+          CategoryType.expense => -tx.amount,
+          CategoryType.transfer =>
+            tx.accountId == accountId ? -tx.amount : tx.amount,
+        },
+    ];
   }
 
   IconData _getIconForType(AccountType type) {
@@ -334,9 +369,9 @@ class AccountListScreen extends StatelessWidget {
     }
   }
 
-  Color _getBalanceColor(double balance) {
-    if (balance >= 0) return Colors.green.shade700;
-    return Colors.red.shade700;
+  Color _getBalanceColor(ColorScheme colorScheme, double balance) {
+    if (balance >= 0) return incomeColor(colorScheme);
+    return expenseColor(colorScheme);
   }
 
   String _getCurrencySymbol(String currencyCode) {

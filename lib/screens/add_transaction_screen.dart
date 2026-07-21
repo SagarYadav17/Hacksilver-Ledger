@@ -14,8 +14,14 @@ import '../utils/icon_utils.dart';
 class AddTransactionScreen extends StatefulWidget {
   final Transaction? transaction;
   final CategoryType? initialType;
+  final Transaction? duplicateFrom;
 
-  const AddTransactionScreen({super.key, this.transaction, this.initialType});
+  const AddTransactionScreen({
+    super.key,
+    this.transaction,
+    this.initialType,
+    this.duplicateFrom,
+  });
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -62,6 +68,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           );
         } catch (e) {
           _selectedCategory = null; // Category might have been deleted
+        }
+      } else if (widget.duplicateFrom != null) {
+        final source = widget.duplicateFrom!;
+        _title = source.title;
+        _amount = source.amount;
+        _selectedDate = DateTime.now();
+        _type = source.type;
+        _selectedAccountId = source.accountId;
+        _transferAccountId = source.transferAccountId;
+        _selectedLoanId = source.loanId;
+        _isForeignCurrency = source.originalAmount != null;
+        _originalAmount = source.originalAmount;
+        _originalCurrency = source.originalCurrency ?? 'USD';
+
+        final categories = Provider.of<CategoryProvider>(
+          context,
+          listen: false,
+        ).categories;
+        try {
+          _selectedCategory = categories.firstWhere(
+            (c) => c.id == source.categoryId,
+          );
+        } catch (e) {
+          _selectedCategory = null;
         }
       } else {
         _title = '';
@@ -241,7 +271,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     // Filter categories based on selected type
     final categoryProvider = Provider.of<CategoryProvider>(context);
     final categories = categoryProvider.categories
-        .where((c) => c.type == _type)
+        .where((c) => c.type == _type && !c.isArchived)
         .toList();
 
     // Reset selected category if it doesn't match type (only if not editing or type changed manually)
@@ -262,36 +292,37 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // Custom Segmented Control for Transaction Type
-              Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    _buildTypeSegment(
-                      'Expense',
-                      CategoryType.expense,
-                      Theme.of(context).colorScheme.error,
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: SegmentedButton<CategoryType>(
+                  segments: const [
+                    ButtonSegment(
+                      value: CategoryType.expense,
+                      label: Text('Expense'),
                     ),
-                    _buildTypeSegment(
-                      'Income',
-                      CategoryType.income,
-                      Theme.of(context).colorScheme.tertiary,
+                    ButtonSegment(
+                      value: CategoryType.income,
+                      label: Text('Income'),
                     ),
-                    _buildTypeSegment(
-                      'Transfer',
-                      CategoryType.transfer,
-                      Theme.of(context).colorScheme.primary,
+                    ButtonSegment(
+                      value: CategoryType.transfer,
+                      label: Text('Transfer'),
                     ),
                   ],
+                  selected: {_type},
+                  onSelectionChanged: (selection) {
+                    setState(() {
+                      _type = selection.first;
+                      _selectedLoanId = null;
+                      if (_selectedCategory != null &&
+                          _selectedCategory!.type != _type) {
+                        _selectedCategory = null;
+                      }
+                    });
+                  },
                 ),
               ),
-              if (widget.transaction == null)
+              if (widget.transaction == null && widget.duplicateFrom == null)
                 _RecentTemplateChips(
                   type: _type,
                   categories: Provider.of<CategoryProvider>(
@@ -334,16 +365,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      if (_isForeignCurrency)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            'Amount in default currency (equivalent)',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ),
                       TextFormField(
                         key: ValueKey('amount-$_amount'),
                         initialValue: _amount > 0 ? _amount.toString() : null,
-                        decoration: InputDecoration(
-                          labelText: _isForeignCurrency
-                              ? 'Amount in Default Currency (Equivalent)'
-                              : 'Amount',
-                          prefixIcon: const Icon(
-                            Icons.currency_exchange_outlined,
-                          ),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          filled: false,
+                          hintText: '0',
                         ),
                         keyboardType: TextInputType.number,
                         validator: (val) {
@@ -718,42 +758,73 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             style: Theme.of(context).textTheme.bodyMedium,
                           )
                         else
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: categories.map((cat) {
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 0.85,
+                            ),
+                            itemCount: categories.length,
+                            itemBuilder: (context, index) {
+                              final cat = categories[index];
                               final selected = _selectedCategory?.id == cat.id;
-                              return ChoiceChip(
-                                selected: selected,
-                                showCheckmark: false,
-                                avatar: Icon(
-                                  categoryIconData(
-                                    cat.iconCode,
-                                    fontFamily: cat.fontFamily,
-                                    fontPackage: cat.fontPackage,
-                                  ),
-                                  size: 18,
-                                  color: selected
-                                      ? Theme.of(context).colorScheme.onPrimary
-                                      : Color(cat.colorValue),
-                                ),
-                                label: Text(cat.name),
-                                selectedColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary,
-                                labelStyle: TextStyle(
-                                  color: selected
-                                      ? Theme.of(context).colorScheme.onPrimary
-                                      : null,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                onSelected: (_) {
+                              final catColor = Color(cat.colorValue);
+                              return InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
                                   setState(() {
                                     _selectedCategory = cat;
                                   });
                                 },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: selected
+                                        ? catColor.withValues(alpha: 0.18)
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest
+                                            .withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: selected
+                                        ? Border.all(color: catColor, width: 2)
+                                        : null,
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        categoryIconData(
+                                          cat.iconCode,
+                                          fontFamily: cat.fontFamily,
+                                          fontPackage: cat.fontPackage,
+                                        ),
+                                        color: catColor,
+                                        size: 22,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
+                                        child: Text(
+                                          cat.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               );
-                            }).toList(),
+                            },
                           ),
                         if (_selectedCategory == null)
                           Padding(
@@ -873,46 +944,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
               const SizedBox(height: 24),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTypeSegment(String title, CategoryType type, Color color) {
-    bool isSelected = _type == type;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _type = type;
-            _selectedLoanId = null;
-            // Reset category if switching type (unless editing same txn)
-            if (_selectedCategory != null && _selectedCategory!.type != type) {
-              _selectedCategory = null;
-            }
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? color : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: !isSelected
-                ? Border.all(color: color.withValues(alpha: 0.3), width: 1.5)
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              title,
-              style: TextStyle(
-                color: isSelected ? Colors.white : color.withValues(alpha: 0.7),
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
           ),
         ),
       ),

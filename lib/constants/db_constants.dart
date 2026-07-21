@@ -28,6 +28,8 @@ class DbConstants {
   static const String columnCategoryColorValue = 'colorValue';
   static const String columnCategoryType = 'type';
   static const String columnCategoryIsCustom = 'isCustom';
+  static const String columnCategorySortOrder = 'sortOrder';
+  static const String columnCategoryIsArchived = 'isArchived';
 
   // Accounts columns
   static const String columnAccountBalance = 'balance';
@@ -42,6 +44,7 @@ class DbConstants {
   static const String columnTransactionOriginalAmount = 'originalAmount';
   static const String columnTransactionOriginalCurrency = 'originalCurrency';
   static const String columnTransactionLoanId = 'loanId';
+  static const String columnTransactionRecurringId = 'recurringId';
 
   // Recurring Transactions columns
   static const String columnRecurringTransactionTitle = 'title';
@@ -65,8 +68,7 @@ class DbConstants {
 
   // Sync metadata columns
   static const String columnLastSyncAt = 'lastSyncAt';
-  static const String columnSupabaseUrl = 'supabaseUrl';
-  static const String columnSupabaseKey = 'supabaseKey';
+  static const String columnPocketBaseUrl = 'pocketbaseUrl';
   static const String columnSyncHistoryStatus = 'status';
   static const String columnSyncHistorySyncedCount = 'syncedCount';
   static const String columnSyncHistoryMessage = 'message';
@@ -74,5 +76,5 @@ class DbConstants {
 
   // Database name
   static const String databaseName = 'hacksilver_ledger.db';
-  static const int databaseVersion = 3; // Bumped for sync history
+  static const int databaseVersion = 6; // Bumped for PocketBase server URL column
 }

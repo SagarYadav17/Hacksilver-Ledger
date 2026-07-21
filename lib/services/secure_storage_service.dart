@@ -17,32 +17,24 @@ class SecureStorageService {
   );
 
   // Key names
-  static const String _keySupabaseUrl = 'supabase_url';
-  static const String _keySupabaseKey = 'supabase_key';
+  static const String _keyPocketBaseAuth = 'pocketbase_auth';
   static const String _keyUserPin = 'user_pin_hash';
   static const String _keyLastBackup = 'last_backup_time';
   static const String _keyEncryptionSalt = 'encryption_salt';
 
-  /// Store Supabase credentials securely
-  static Future<void> storeSupabaseCredentials(String url, String key) async {
-    await _storage.write(key: _keySupabaseUrl, value: url);
-    await _storage.write(key: _keySupabaseKey, value: key);
+  /// Store the PocketBase auth session (exported from `authStore.exportToJson()`)
+  static Future<void> storePocketBaseAuth(String authJson) async {
+    await _storage.write(key: _keyPocketBaseAuth, value: authJson);
   }
 
-  /// Retrieve Supabase credentials
-  static Future<Map<String, String?>?> getSupabaseCredentials() async {
-    final url = await _storage.read(key: _keySupabaseUrl);
-    final key = await _storage.read(key: _keySupabaseKey);
-    
-    if (url == null || key == null) return null;
-    
-    return {'url': url, 'key': key};
+  /// Retrieve the saved PocketBase auth session, if any
+  static Future<String?> getPocketBaseAuth() async {
+    return _storage.read(key: _keyPocketBaseAuth);
   }
 
-  /// Clear Supabase credentials
-  static Future<void> clearSupabaseCredentials() async {
-    await _storage.delete(key: _keySupabaseUrl);
-    await _storage.delete(key: _keySupabaseKey);
+  /// Clear the saved PocketBase auth session (logout)
+  static Future<void> clearPocketBaseAuth() async {
+    await _storage.delete(key: _keyPocketBaseAuth);
   }
 
   /// Store user PIN hash (for app lock feature)

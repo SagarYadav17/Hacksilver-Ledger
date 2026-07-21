@@ -7,10 +7,10 @@ import '../providers/category_provider.dart';
 import '../providers/currency_provider.dart';
 import '../providers/account_provider.dart';
 import '../models/category.dart';
-import '../models/account.dart';
 import '../models/transaction.dart' as model;
-import 'add_transaction_screen.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/transaction_details_sheet.dart';
+import '../utils/amount_colors.dart';
 import '../utils/icon_utils.dart';
 
 class TransactionListScreen extends StatefulWidget {
@@ -332,16 +332,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                           categories,
                                         ),
                                         formatter: formatter,
-                                        onTap: () => _showTransactionDetails(
+                                        onTap: () => showTransactionDetailsSheet(
                                           context,
-                                          group.transactions[i],
-                                          _categoryFor(
+                                          transaction: group.transactions[i],
+                                          category: _categoryFor(
                                             group.transactions[i].categoryId,
                                             categories,
                                           ),
-                                          accounts,
-                                          formatter,
-                                          provider,
+                                          accounts: accounts,
+                                          formatter: formatter,
+                                          provider: provider,
                                         ),
                                         onDelete: () async {
                                           final shouldDelete =
@@ -447,222 +447,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         ],
       ),
     );
-  }
-
-  void _showTransactionDetails(
-    BuildContext context,
-    model.Transaction tx,
-    Category category,
-    List<Account> accounts,
-    NumberFormat formatter,
-    TransactionProvider provider,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final categoryColor = Color(category.colorValue);
-
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            8,
-            20,
-            24 + MediaQuery.of(sheetContext).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: categoryColor.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  categoryIconData(
-                    category.iconCode,
-                    fontFamily: category.fontFamily,
-                    fontPackage: category.fontPackage,
-                  ),
-                  color: categoryColor,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _detailAmount(tx, formatter),
-                style: Theme.of(sheetContext).textTheme.headlineMedium
-                    ?.copyWith(
-                      color: _amountColor(tx.type, colorScheme),
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                tx.title,
-                textAlign: TextAlign.center,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  Chip(
-                    label: Text(category.name),
-                    avatar: Icon(
-                      categoryIconData(
-                        category.iconCode,
-                        fontFamily: category.fontFamily,
-                        fontPackage: category.fontPackage,
-                      ),
-                      size: 16,
-                      color: categoryColor,
-                    ),
-                    backgroundColor: categoryColor.withValues(alpha: 0.12),
-                  ),
-                  Chip(label: Text(_typeLabel(tx.type))),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Card(
-                elevation: 0,
-                margin: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: colorScheme.outlineVariant),
-                ),
-                child: Column(
-                  children: [
-                    _DetailRow(
-                      label: 'Account',
-                      value: _accountLabel(tx, accounts),
-                    ),
-                    _DetailRow(
-                      label: 'Date',
-                      value: DateFormat.yMMMd().format(tx.date),
-                    ),
-                    if (tx.originalAmount != null)
-                      _DetailRow(
-                        label: 'Original amount',
-                        value:
-                            '${tx.originalAmount!.toStringAsFixed(2)} ${tx.originalCurrency}',
-                      ),
-                    _DetailRow(
-                      label: 'Note',
-                      value: tx.notes?.isNotEmpty == true ? tx.notes! : '-',
-                      showDivider: false,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        Navigator.of(sheetContext).pop();
-                        final shouldDelete = await _confirmDelete(context);
-                        if (shouldDelete != true) return;
-                        await provider.deleteTransaction(tx.id!);
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Transaction deleted')),
-                        );
-                      },
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Delete'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.of(sheetContext).pop();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                AddTransactionScreen(transaction: tx),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Edit'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  String _accountLabel(model.Transaction tx, List<Account> accounts) {
-    final source = _accountName(tx.accountId, accounts);
-    if (tx.type != CategoryType.transfer) return source;
-
-    final destination = _accountName(tx.transferAccountId, accounts);
-    return '$source -> $destination';
-  }
-
-  String _accountName(int? id, List<Account> accounts) {
-    if (id == null) return 'Unlinked';
-    return accounts
-        .firstWhere(
-          (account) => account.id == id,
-          orElse: () => Account(
-            name: 'Unknown account',
-            type: AccountType.other,
-            balance: 0,
-          ),
-        )
-        .name;
-  }
-
-  String _typeLabel(CategoryType type) {
-    switch (type) {
-      case CategoryType.income:
-        return 'Income';
-      case CategoryType.expense:
-        return 'Expense';
-      case CategoryType.transfer:
-        return 'Transfer';
-    }
-  }
-
-  double _signedAmount(model.Transaction tx) {
-    switch (tx.type) {
-      case CategoryType.income:
-        return tx.amount;
-      case CategoryType.expense:
-        return -tx.amount;
-      case CategoryType.transfer:
-        return 0;
-    }
-  }
-
-  String _detailAmount(model.Transaction tx, NumberFormat formatter) {
-    if (tx.type == CategoryType.transfer) return formatter.format(tx.amount);
-    return _formatSignedAmount(_signedAmount(tx), formatter);
-  }
-
-  Color _amountColor(CategoryType type, ColorScheme colorScheme) {
-    switch (type) {
-      case CategoryType.income:
-        return colorScheme.tertiary;
-      case CategoryType.expense:
-        return colorScheme.error;
-      case CategoryType.transfer:
-        return colorScheme.primary;
-    }
   }
 
   String _getCurrencySymbol(String currencyCode) {
@@ -791,58 +575,6 @@ class _TransactionRow extends StatelessWidget {
     return formatter.format(transaction.amount);
   }
 
-  static Color _displayColor(CategoryType type, ColorScheme colorScheme) {
-    if (type == CategoryType.income) return colorScheme.tertiary;
-    if (type == CategoryType.expense) return colorScheme.error;
-    return colorScheme.primary;
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool showDivider;
-
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.showDivider = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const Spacer(),
-              Flexible(
-                child: Text(
-                  value,
-                  textAlign: TextAlign.end,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            indent: 16,
-            endIndent: 16,
-            color: colorScheme.outlineVariant,
-          ),
-      ],
-    );
-  }
+  static Color _displayColor(CategoryType type, ColorScheme colorScheme) =>
+      amountColorForType(colorScheme, type);
 }

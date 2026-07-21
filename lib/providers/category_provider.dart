@@ -49,6 +49,43 @@ class CategoryProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateCategory(Category category) async {
+    try {
+      await _dbService.updateCategory(category);
+      await fetchCategories();
+    } catch (e) {
+      _error = 'Failed to update category';
+      debugPrint('Error updating category: $e');
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> reorderCategories(List<Category> orderedCategories) async {
+    for (var i = 0; i < orderedCategories.length; i++) {
+      await _dbService.updateCategory(
+        orderedCategories[i].copyWith(sortOrder: i),
+      );
+    }
+    await fetchCategories();
+  }
+
+  Future<void> archiveCategory(int id) async {
+    final category = _categories.firstWhere((c) => c.id == id);
+    await updateCategory(category.copyWith(isArchived: true));
+  }
+
+  Future<void> unarchiveCategory(int id) async {
+    final category = _categories.firstWhere((c) => c.id == id);
+    await updateCategory(category.copyWith(isArchived: false));
+  }
+
+  /// Reassigns every transaction in [fromId] to [toId], then archives [fromId].
+  Future<void> mergeCategories(int fromId, int toId) async {
+    await _dbService.reassignCategory(fromId, toId);
+    await archiveCategory(fromId);
+  }
+
   Future<void> deleteCategory(int id) async {
     try {
       _isLoading = true;

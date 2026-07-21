@@ -7,7 +7,6 @@ import '../providers/category_provider.dart';
 import '../providers/currency_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../models/category.dart';
-import '../widgets/custom_drawer.dart';
 import '../utils/icon_utils.dart';
 
 class CategoryListScreen extends StatelessWidget {
@@ -18,7 +17,6 @@ class CategoryListScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        drawer: const CustomDrawer(currentRoute: '/categories'),
         appBar: AppBar(
           title: const Text('Categories'),
           bottom: const TabBar(
@@ -63,9 +61,12 @@ class CategoryList extends StatelessWidget {
 
     return Consumer2<CategoryProvider, TransactionProvider>(
       builder: (context, categoryProvider, transactionProvider, child) {
-        final categories = categoryProvider.categories
+        final allOfType = categoryProvider.categories
             .where((c) => c.type == type)
             .toList();
+        final active = allOfType.where((c) => !c.isArchived).toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        final archived = allOfType.where((c) => c.isArchived).toList();
         final transactions = transactionProvider.transactions
             .where((tx) => tx.type == type)
             .toList();
@@ -74,115 +75,282 @@ class CategoryList extends StatelessWidget {
           (sum, tx) => sum + tx.amount,
         );
 
-        if (categories.isEmpty) {
+        if (allOfType.isEmpty) {
           return const Center(child: Text('No categories found.'));
         }
 
-        return ListView.builder(
-          itemCount: categories.length,
-          itemBuilder: (context, index) {
-            final cat = categories[index];
-            final categoryTransactions = transactions
-                .where((tx) => tx.categoryId == cat.id)
-                .toList();
-            final usageCount = categoryTransactions.length;
-            final usageAmount = categoryTransactions.fold<double>(
-              0,
-              (sum, tx) => sum + tx.amount,
-            );
-            final share = totalAmount == 0 ? 0.0 : usageAmount / totalAmount;
-            final categoryColor = Color(cat.colorValue);
-
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundColor: categoryColor.withValues(alpha: 0.2),
-                child: Icon(
-                  categoryIconData(
-                    cat.iconCode,
-                    fontFamily: cat.fontFamily,
-                    fontPackage: cat.fontPackage,
-                  ),
-                  color: categoryColor,
-                ),
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 16),
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text('This month · drag to reorder'),
+            ),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: active.length,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > oldIndex) newIndex -= 1;
+                final reordered = List<Category>.from(active);
+                final moved = reordered.removeAt(oldIndex);
+                reordered.insert(newIndex, moved);
+                categoryProvider.reorderCategories(reordered);
+              },
+              itemBuilder: (context, index) {
+                final cat = active[index];
+                return _CategoryRow(
+                  key: ValueKey(cat.id),
+                  category: cat,
+                  transactions: transactions,
+                  totalAmount: totalAmount,
+                  formatter: formatter,
+                  otherCategories: active
+                      .where((c) => c.id != cat.id)
+                      .toList(),
+                );
+              },
+            ),
+            if (archived.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 20, 16, 4),
+                child: Text('Archived'),
               ),
-              title: Text(cat.name),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    usageCount == 0
-                        ? 'No transactions'
-                        : '$usageCount ${usageCount == 1 ? 'transaction' : 'transactions'} · ${formatter.format(usageAmount)} · ${(share * 100).toStringAsFixed(0)}%',
-                  ),
-                  if (usageCount > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: LinearProgressIndicator(
-                        value: share,
-                        minHeight: 4,
-                        backgroundColor: categoryColor.withValues(alpha: 0.12),
-                        color: categoryColor,
-                        borderRadius: BorderRadius.circular(99),
+              for (final cat in archived)
+                Opacity(
+                  opacity: 0.55,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Color(
+                        cat.colorValue,
+                      ).withValues(alpha: 0.2),
+                      child: Icon(
+                        categoryIconData(
+                          cat.iconCode,
+                          fontFamily: cat.fontFamily,
+                          fontPackage: cat.fontPackage,
+                        ),
+                        color: Color(cat.colorValue),
                       ),
                     ),
-                ],
-              ),
-              trailing: cat.isCustom
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.delete_outlined,
-                        color: Colors.grey,
-                      ),
-                      onPressed: () {
-                        // Confirm delete
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Delete Category?'),
-                            content: const Text(
-                              'This will not delete existing transactions, but they will lose this category association.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  categoryProvider.deleteCategory(cat.id!);
-                                  Navigator.of(ctx).pop();
-                                },
-                                child: const Text(
-                                  'Delete',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    )
-                  : null, // Default categories cannot be deleted
-            );
-          },
+                    title: Text('${cat.name} — archived'),
+                    subtitle: const Text(
+                      'Hidden from pickers, history kept',
+                    ),
+                    trailing: TextButton(
+                      onPressed: () =>
+                          categoryProvider.unarchiveCategory(cat.id!),
+                      child: const Text('Unarchive'),
+                    ),
+                  ),
+                ),
+            ],
+          ],
         );
       },
     );
   }
 }
 
+class _CategoryRow extends StatelessWidget {
+  final Category category;
+  final List<dynamic> transactions;
+  final double totalAmount;
+  final NumberFormat formatter;
+  final List<Category> otherCategories;
+
+  const _CategoryRow({
+    super.key,
+    required this.category,
+    required this.transactions,
+    required this.totalAmount,
+    required this.formatter,
+    required this.otherCategories,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cat = category;
+    final categoryTransactions = transactions
+        .where((tx) => tx.categoryId == cat.id)
+        .toList();
+    final usageCount = categoryTransactions.length;
+    final usageAmount = categoryTransactions.fold<double>(
+      0,
+      (sum, tx) => sum + tx.amount,
+    );
+    final share = totalAmount == 0 ? 0.0 : usageAmount / totalAmount;
+    final categoryColor = Color(cat.colorValue);
+    final categoryProvider = context.read<CategoryProvider>();
+
+    return ListTile(
+      leading: const Icon(Icons.drag_indicator),
+      title: Row(
+        children: [
+          CircleAvatar(
+            radius: 19,
+            backgroundColor: categoryColor.withValues(alpha: 0.2),
+            child: Icon(
+              categoryIconData(
+                cat.iconCode,
+                fontFamily: cat.fontFamily,
+                fontPackage: cat.fontPackage,
+              ),
+              color: categoryColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(cat.name)),
+        ],
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(left: 50),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              usageCount == 0
+                  ? 'No transactions'
+                  : '$usageCount ${usageCount == 1 ? 'entry' : 'entries'} · ${(share * 100).toStringAsFixed(0)}% of spend',
+            ),
+            if (usageCount > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: LinearProgressIndicator(
+                  value: share,
+                  minHeight: 4,
+                  backgroundColor: categoryColor.withValues(alpha: 0.12),
+                  color: categoryColor,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+          ],
+        ),
+      ),
+      trailing: PopupMenuButton<String>(
+        onSelected: (action) {
+          switch (action) {
+            case 'edit':
+              showDialog(
+                context: context,
+                builder: (ctx) => AddCategoryDialog(existing: cat),
+              );
+              break;
+            case 'merge':
+              _showMergeDialog(context, categoryProvider);
+              break;
+            case 'archive':
+              categoryProvider.archiveCategory(cat.id!);
+              break;
+            case 'delete':
+              _confirmDelete(context, categoryProvider);
+              break;
+          }
+        },
+        itemBuilder: (ctx) => [
+          const PopupMenuItem(value: 'edit', child: Text('Edit')),
+          if (otherCategories.isNotEmpty)
+            const PopupMenuItem(value: 'merge', child: Text('Merge into…')),
+          const PopupMenuItem(value: 'archive', child: Text('Archive')),
+          if (cat.isCustom)
+            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, CategoryProvider provider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Category?'),
+        content: const Text(
+          'This will not delete existing transactions, but they will lose this category association.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              provider.deleteCategory(category.id!);
+              Navigator.of(ctx).pop();
+            },
+            child: Text(
+              'Delete',
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMergeDialog(BuildContext context, CategoryProvider provider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Merge "${category.name}" into…'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: otherCategories.length,
+            itemBuilder: (context, index) {
+              final target = otherCategories[index];
+              return ListTile(
+                leading: Icon(
+                  categoryIconData(
+                    target.iconCode,
+                    fontFamily: target.fontFamily,
+                    fontPackage: target.fontPackage,
+                  ),
+                  color: Color(target.colorValue),
+                ),
+                title: Text(target.name),
+                onTap: () {
+                  provider.mergeCategories(category.id!, target.id!);
+                  Navigator.of(ctx).pop();
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class AddCategoryDialog extends StatefulWidget {
-  const AddCategoryDialog({super.key});
+  final Category? existing;
+
+  const AddCategoryDialog({super.key, this.existing});
 
   @override
   State<AddCategoryDialog> createState() => _AddCategoryDialogState();
 }
 
 class _AddCategoryDialogState extends State<AddCategoryDialog> {
-  final _nameController = TextEditingController();
-  CategoryType _type = CategoryType.expense;
-  IconData _selectedIcon = Icons.fastfood; // Default icon
-  int _selectedColor = 0xFFF44336; // Default color
+  late final _nameController = TextEditingController(
+    text: widget.existing?.name ?? '',
+  );
+  late CategoryType _type = widget.existing?.type ?? CategoryType.expense;
+  late IconData _selectedIcon = widget.existing != null
+      ? categoryIconData(
+          widget.existing!.iconCode,
+          fontFamily: widget.existing!.fontFamily,
+          fontPackage: widget.existing!.fontPackage,
+        )
+      : Icons.fastfood;
+  late int _selectedColor = widget.existing?.colorValue ?? 0xFFF44336;
 
   final List<IconData> _availableIcons = [
     Icons.fastfood,
@@ -336,7 +504,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Category'),
+      title: Text(widget.existing != null ? 'Edit Category' : 'Add Category'),
       scrollable: true,
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -416,23 +584,38 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
           onPressed: () {
             if (_nameController.text.isEmpty) return;
 
-            final newCat = Category(
-              name: _nameController.text,
-              iconCode: _selectedIcon.codePoint,
-              fontFamily: _selectedIcon.fontFamily,
-              fontPackage: _selectedIcon.fontPackage,
-              colorValue: _selectedColor,
-              type: _type,
-              isCustom: true,
-            );
-
-            Provider.of<CategoryProvider>(
+            final provider = Provider.of<CategoryProvider>(
               context,
               listen: false,
-            ).addCategory(newCat);
+            );
+
+            if (widget.existing != null) {
+              provider.updateCategory(
+                widget.existing!.copyWith(
+                  name: _nameController.text,
+                  iconCode: _selectedIcon.codePoint,
+                  fontFamily: _selectedIcon.fontFamily,
+                  fontPackage: _selectedIcon.fontPackage,
+                  colorValue: _selectedColor,
+                  type: _type,
+                ),
+              );
+            } else {
+              provider.addCategory(
+                Category(
+                  name: _nameController.text,
+                  iconCode: _selectedIcon.codePoint,
+                  fontFamily: _selectedIcon.fontFamily,
+                  fontPackage: _selectedIcon.fontPackage,
+                  colorValue: _selectedColor,
+                  type: _type,
+                  isCustom: true,
+                ),
+              );
+            }
             Navigator.pop(context);
           },
-          child: const Text('Add'),
+          child: Text(widget.existing != null ? 'Save' : 'Add'),
         ),
       ],
     );

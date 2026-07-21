@@ -1,65 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:pocketbase/pocketbase.dart';
 import '../models/account.dart';
 import '../models/category.dart';
 import '../models/loan.dart';
 import '../models/recurring_transaction.dart';
 import '../models/sync_model.dart';
 import '../models/transaction.dart' as model;
-import '../utils/security_utils.dart';
 import 'database_service.dart';
-import 'secure_storage_service.dart';
 
-/// Service responsible for one-way sync (Local -> Supabase)
+/// Service responsible for one-way sync (Local -> PocketBase).
+/// Uses the PocketBase client owned by AuthProvider so requests carry the
+/// logged-in user's identity; every synced row is stamped with `user` so
+/// PocketBase's API rules can scope it to that account only.
 class SyncService {
-  static final SyncService _instance = SyncService._internal();
-  factory SyncService() => _instance;
-  SyncService._internal();
-
-  SupabaseClient? _supabase;
   final DatabaseService _dbService = DatabaseService();
+  PocketBase? _pb;
 
-  bool get isInitialized => _supabase != null;
+  bool get isInitialized => _pb != null && _pb!.authStore.isValid;
 
-  /// Initialize Supabase with user-provided credentials
-  Future<void> initialize(String url, String anonKey) async {
-    // Validate credentials before initializing
-    final urlValidation = SecurityUtils.validateSupabaseUrl(url);
-    if (!urlValidation.isValid) {
-      throw SecurityException(urlValidation.errorMessage!);
-    }
-
-    // Validate key format (basic check for JWT-like structure)
-    if (anonKey.length < 20 || !anonKey.contains('.')) {
-      throw SecurityException('Invalid API key format');
-    }
-
-    // Sanitize and validate
-    final sanitizedUrl = urlValidation.value;
-
-    await Supabase.initialize(
-      url: sanitizedUrl,
-      publishableKey: anonKey.trim(),
-    );
-    _supabase = Supabase.instance.client;
-
-    // Store credentials securely
-    await SecureStorageService.storeSupabaseCredentials(
-      sanitizedUrl,
-      anonKey.trim(),
-    );
+  /// Bind (or rebind) the authenticated PocketBase client to use for sync.
+  void bindClient(PocketBase? client) {
+    _pb = client;
   }
 
-  /// Dispose Supabase client
-  Future<void> dispose() async {
-    _supabase = null;
-    await Supabase.instance.dispose();
-  }
-
-  /// Perform one-way sync: upload all pending local changes to Supabase
+  /// Perform one-way sync: upload all pending local changes to PocketBase
   Future<SyncResult> performSync() async {
-    if (_supabase == null) {
-      return SyncResult.error('Supabase not initialized');
+    if (!isInitialized) {
+      return SyncResult.error('Not logged in');
     }
 
     final results = <String, int>{};
@@ -164,6 +131,10 @@ class SyncService {
     );
   }
 
+  /// Finds the remote record by `local_sync_id` and updates it, or creates
+  /// a new one if it doesn't exist yet. PocketBase controls its own `id`
+  /// format, so our locally-generated sync id is carried in a separate
+  /// `local_sync_id` field instead of PocketBase's primary key.
   Future<TableSyncResult> _syncTable<T extends SyncableModel>({
     required String tableName,
     required Future<List<T>> Function() fetchLocal,
@@ -171,25 +142,39 @@ class SyncService {
     required Future<void> Function(int localId, String syncId) markAsSynced,
     required Future<void> Function(int localId) markAsFailed,
   }) async {
-    if (_supabase == null) {
-      return TableSyncResult.error('Supabase not initialized');
+    final pb = _pb;
+    if (pb == null || !isInitialized) {
+      return TableSyncResult.error('Not logged in');
     }
 
     try {
       final items = await fetchLocal();
       int syncedCount = 0;
+      final collection = pb.collection(tableName);
 
       for (final item in items) {
         try {
-          final map = toSyncMap(item);
+          final syncMap = toSyncMap(item);
+          final localSyncId = syncMap.remove('id') as String;
+          final body = {
+            ...syncMap,
+            'local_sync_id': localSyncId,
+            'user': pb.authStore.record!.id,
+          };
 
-          // Use upsert to handle both inserts and updates
-          await _supabase!.from(tableName).upsert(map, onConflict: 'id');
+          try {
+            final existing = await collection.getFirstListItem(
+              "local_sync_id='$localSyncId'",
+            );
+            await collection.update(existing.id, body: body);
+          } on ClientException catch (e) {
+            if (e.statusCode != 404) rethrow;
+            await collection.create(body: body);
+          }
 
-          // Mark as synced locally
           final localId = (item as dynamic).id as int?;
           if (localId != null) {
-            await markAsSynced(localId, map['id'] as String);
+            await markAsSynced(localId, localSyncId);
           }
 
           syncedCount++;
