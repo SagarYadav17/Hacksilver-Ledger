@@ -1,88 +1,97 @@
 # PocketBase server setup
 
-Hacksilver Ledger backs up to a self-hosted [PocketBase](https://pocketbase.io)
-instance. The app never ships or manages the server — you run PocketBase
-yourself and create the collections below once. Each app install then signs
-up or logs in with its own PocketBase account, and every synced row is scoped
-to that account via API rules, so multiple people can share one server
-without seeing each other's data.
+Hacksilver Ledger uses an optional self-hosted
+[PocketBase](https://pocketbase.io) instance. SQLite remains local source of
+truth. PocketBase never receives a server-admin credential from the app.
 
 ## 1. Run PocketBase
 
-Download the single binary for your platform from
-https://pocketbase.io/docs/ and run:
+Download the PocketBase binary, then run:
 
-```
+```text
 ./pocketbase serve
 ```
 
-Open the admin UI at `http://127.0.0.1:8090/_/` and create an admin account.
-The built-in `users` auth collection is used as-is for login/signup — no
-changes needed there.
+Open `http://127.0.0.1:8090/_/` and create an admin account. The built-in
+`users` auth collection handles app signup/login without changes.
 
-## 2. Create the synced collections
+## 2. Create collections
 
-Create five collections, all **Base** type (not Auth), named exactly:
-`categories`, `accounts`, `transactions`, `loans`, `recurring_transactions`.
+Create five **Base** collections named exactly: `categories`, `accounts`,
+`transactions`, `loans`, and `recurring_transactions`.
 
-Every collection needs these two fields in addition to its own data fields:
+Every collection needs:
 
-| Field | Type | Notes |
+| Field | Type | Rule |
 |---|---|---|
-| `user` | Relation → `users` | Required, single record |
-| `local_sync_id` | Text | Required — the app's locally-generated UUID for this row |
+| `user` | Relation to `users` | Required, one record |
+| `local_sync_id` | Text | Required UUID |
+| `updated_at` | Text | Required UTC ISO-8601 timestamp |
+| `deleted_at` | Text | Optional UTC ISO-8601 tombstone timestamp |
 
-Add a **unique index** on (`user`, `local_sync_id`) for each collection so a
-device can never create two remote rows for the same local record.
+Add a unique index on `(user, local_sync_id)` in every collection. These UUIDs
+are stable across devices; never create relations with SQLite numeric IDs.
 
-### `categories` fields
-`local_id` (number), `name` (text), `icon_code` (number), `font_family`
-(text, optional), `font_package` (text, optional), `color_value` (number),
-`type` (text), `is_custom` (bool), `updated_at` (text), `deleted_at` (text,
-optional)
+### Categories
 
-### `accounts` fields
-`local_id` (number), `name` (text), `type` (text), `balance` (number),
-`updated_at` (text), `deleted_at` (text, optional)
+`name` (text), `icon_code` (number), `font_family` (text, optional),
+`font_package` (text, optional), `color_value` (number), `type` (text),
+`is_custom` (bool), `sort_order` (number), `is_archived` (bool).
 
-### `transactions` fields
-`local_id` (number), `title` (text), `amount` (number), `date` (text), `type`
-(text), `category_id` (number), `account_id` (number, optional),
-`transfer_account_id` (number, optional), `notes` (text, optional),
-`original_amount` (number, optional), `original_currency` (text, optional),
-`loan_id` (number, optional), `recurring_id` (number, optional), `updated_at`
-(text), `deleted_at` (text, optional)
+### Accounts
 
-### `loans` fields
-`local_id` (number), `title` (text), `amount` (number), `interest_rate`
-(number), `tenure_months` (number), `type` (text), `start_date` (text),
+`name` (text), `type` (text), `balance` (number).
+
+### Loans
+
+`title` (text), `amount` (number), `interest_rate` (number),
+`tenure_months` (number), `type` (text), `start_date` (text),
 `emi_amount` (number), `amount_paid` (number), `is_closed` (bool), `notes`
-(text, optional), `updated_at` (text), `deleted_at` (text, optional)
+(text, optional).
 
-### `recurring_transactions` fields
-`local_id` (number), `title` (text), `amount` (number), `type` (text),
-`category_id` (number), `account_id` (number, optional), `frequency` (text),
+### Recurring transactions
+
+`title` (text), `amount` (number), `type` (text), `frequency` (text),
 `start_date` (text), `next_due_date` (text), `is_active` (bool), `notes`
-(text, optional), `updated_at` (text), `deleted_at` (text, optional)
+(text, optional), `category_sync_id` (text), `account_sync_id` (text,
+optional).
 
-## 3. API rules (this is what isolates each user's data)
+### Transactions
 
-Set the same four rules on **every** one of the five collections:
+`title` (text), `amount` (number), `date` (text), `type` (text), `notes`
+(text, optional), `original_amount` (number, optional), `original_currency`
+(text, optional), `category_sync_id` (text), `account_sync_id` (text,
+optional), `transfer_account_sync_id` (text, optional), `loan_sync_id` (text,
+optional), `recurring_sync_id` (text, optional).
 
-- **List/Search rule**: `user = @request.auth.id`
-- **View rule**: `user = @request.auth.id`
-- **Create rule**: `@request.auth.id != "" && @request.body.user = @request.auth.id`
-- **Update rule**: `user = @request.auth.id`
-- **Delete rule**: `user = @request.auth.id`
+Each `*_sync_id` points to another record's `local_sync_id` owned by the same
+user. Create these as text fields, not PocketBase relation fields: collection
+rules cannot safely enforce ownership through a relation traversal.
 
-Leave the `users` collection's own rules at PocketBase's defaults (or disable
-open signups there if you want to invite people manually instead of letting
-anyone self-register).
+## 3. API rules
 
-## 4. Point the app at your server
+Set these rules on every synced collection:
 
-In the app: More → Sync & backup → "Device + cloud copy" → enter your
-server's URL (e.g. `https://pb.your-domain.com`) → sign up or log in. From
-then on, "Sync now" uploads pending local changes; each row lands in the
-collection matching its type, tagged with your account so no other user on
-the same server can read or write it.
+- List/Search: `user = @request.auth.id`
+- View: `user = @request.auth.id`
+- Create: `@request.auth.id != "" && @request.body.user = @request.auth.id`
+- Update: `user = @request.auth.id`
+- Delete: `user = @request.auth.id`
+
+Leave `users` at PocketBase defaults, or disable open signup there if you
+invite users yourself.
+
+## 4. Connect app
+
+In the app, open **Sync & backup**, select **Device + cloud copy**, enter the
+server URL (for example `https://pb.example.com`), then sign up or log in.
+
+During current development, clear/reinstall the app and reset development
+collections after a local schema change. Do not test two-way behavior against
+old remote rows created with numeric relation fields.
+
+## 5. Sync behavior
+
+Manual sync uploads local changes. The release target adds two-way pull,
+newest-UTC-change wins conflict handling, tombstones, sync history, and
+background retry. Until that lands, cloud copy remains upload-only.

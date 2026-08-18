@@ -1,124 +1,61 @@
-# Hacksilver Ledger: UI Feature Map for LLM Agents
+# Hacksilver Ledger: UI feature map
 
-This document is for UI planning. It separates features already present in app from features desired next, so new screens and flows can be designed against real product state.
+Use this document for UI work. Preserve offline-first finance flows; PocketBase
+is optional and must never block local use.
 
-## Goal
+## Available now
 
-Design a cleaner, more capable finance app UI without losing current offline-first behavior. Treat this as product truth for layout, navigation, empty states, settings, and future expansion.
+### Core finance
 
-## Features Available Now
+- Dashboard with balance, current-month income/expense, recent activity, and
+  add-transaction empty state.
+- Income, expense, and transfer CRUD; date range/type filters, search, notes,
+  foreign-currency amount, transaction detail sheet.
+- Custom and default categories, icons/colors, category archive/reorder.
+- Multiple accounts with automatic balances after transactions/transfers.
+- Recurring transactions with due generation and active/inactive toggle.
+- Taken/given loans, EMI/payment entries, loan history, paid/remaining state.
 
-### Dashboard
-- Financial summary card with available balance, current-month income, and current-month expense
-- Recent transactions preview
-- Manual refresh action
-- Empty state with add-transaction CTA
+### Preferences and safety
 
-### Transactions
-- Add transaction
-- Edit transaction
-- Delete transaction
-- Support for income, expense, and transfer entries
-- Date picker
-- Optional notes
-- Optional foreign-currency amount and original currency
-- Filter by type: income, expense
-- Filter by date range
+- Material 3 themes, accent colors, INR/USD/EUR/GBP, navigation drawer.
+- PIN lock and balance hiding.
+- Local database export/restore with confirmation.
 
-### Categories
-- Built-in default categories
-- Custom categories
-- Custom category icon
-- Custom category color
-- Separate income and expense category views
+### Cloud
 
-### Accounts
-- Multiple accounts
-- Account types: cash, bank, credit card, other
-- Add, edit, delete account
-- Automatic account balance updates after income, expense, and transfer activity
+- Optional PocketBase server URL, sign-up/login, secure session storage.
+- Manual local-to-PocketBase cloud copy, pending count, last-sync time, and
+  sync error/history display.
+- Current cloud copy is one-way. Do not describe it as backup recovery or
+  multi-device sync.
 
-### Recurring Transactions
-- Add recurring transaction
-- List recurring transactions
-- Delete recurring transaction
-- Automatic transaction generation when due
+## Release work in progress
 
-### Loans
-- Track taken loans and given loans
-- Add, edit, delete loan
-- EMI/payment entry flow
-- Loan-linked transactions
-- Loan history screen
-- Progress tracking with paid vs remaining amount
-- Closed vs active state
+### Sync and backup
 
-### Appearance and Preferences
-- Material 3 theming
-- Light mode
-- Dark mode
-- System theme
-- Accent color selection
-- Currency selection: INR, USD, EUR, GBP
-- Navigation drawer routing across major sections
+- Two-way PocketBase sync with authenticated user isolation, UUID sync IDs,
+  tombstones, conflict history, retry, and Android background scheduling.
+- Backup history, integrity result, recovery-copy visibility, and restore
+  safety.
 
-### Backup and Sync
-- Local database backup export
-- Local database restore
-- Supabase credential setup
-- Manual one-way sync from local database to Supabase
-- Pending sync count
-- Last sync timestamp
-- Sync error display
+### Finance UX
 
-## Features Wanted Next
+- Persistent transaction sort controls.
+- Analytics period comparison and resilient empty states.
+- Account details, history, trend, reconciliation adjustment.
+- Loan repayment timeline/calendar and reminders.
+- Category merge with reassignment confirmation and usage stats.
+- Recurring transaction editing and clearer pause/resume controls.
 
-### Better Transaction UX
-- Transfer filter in transaction list
-- Richer search and sort
-- Transaction details sheet instead of only edit flow
-- Faster add flow with presets, templates, and recent selections
-- Better recurring transaction editing and pause/resume controls
+## Design rules
 
-### Better Dashboard UX
-- Chart-based analytics
-- Spending by category
-- Monthly trend views
-- Cashflow comparison periods
-- Quick actions always visible, not only empty state
-
-### Better Loan UX
-- Dedicated EMI timeline
-- Repayment calendar
-- Loan insights and reminders
-- Better distinction between borrowings and lendings
-
-### Better Account UX
-- Account details page
-- Transfer-focused UI
-- Account health, trends, and reconciliation states
-
-### Better Category UX
-- Category usage stats
-- Reorder, merge, and archive categories
-- Better icon and color picker UX
-
-### Sync and Cloud
-- Clear local/cloud/hybrid mode UI
-- Background sync status
-- Conflict handling UI
-- Sync history and audit log
-- Better onboarding for Supabase setup
-
-### Safety and Utility
-- App lock / PIN UX
-- Better backup history UI
-- Restore confirmation flow
-- Error recovery and diagnostics screens
-
-## UI Design Notes
-
-- App is offline-first. Cloud must feel optional, not required.
-- Current navigation is drawer-based. New UI can improve this, but must preserve access to dashboard, transactions, categories, recurring items, loans, accounts, and settings.
-- Current feature set is strong in CRUD and weak in analytics. New UI should highlight existing core workflows first, then make room for planned insights.
-- Current sync exists but is still early-stage. UI should present it as advanced/optional, not as primary product path.
+- Local data remains usable offline. Cloud controls stay secondary and explain
+  their state plainly.
+- Preserve access to dashboard, transactions, categories, recurring items,
+  loans, accounts, analytics, and settings.
+- Before a new flow, use Mobbin to study finance-app information hierarchy,
+  empty states, confirmation patterns, and compact mobile forms; do not copy
+  branded assets or layouts.
+- Treat balances and loan figures as sensitive: respect balance hiding and use
+  clear destructive-action confirmation.
