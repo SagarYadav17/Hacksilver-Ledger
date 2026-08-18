@@ -14,6 +14,7 @@ class SyncProvider extends ChangeNotifier {
   bool _boundLoggedIn = false;
   int _pendingCount = 0;
   DateTime? _lastSyncAt;
+  DateTime? _lastPullAt;
   String? _lastError;
   SyncResult? _lastResult;
   List<Map<String, dynamic>> _syncHistory = [];
@@ -22,6 +23,7 @@ class SyncProvider extends ChangeNotifier {
   bool get isSyncing => _isSyncing;
   int get pendingCount => _pendingCount;
   DateTime? get lastSyncAt => _lastSyncAt;
+  DateTime? get lastPullAt => _lastPullAt;
   String? get lastError => _lastError;
   SyncResult? get lastResult => _lastResult;
   List<Map<String, dynamic>> get syncHistory => _syncHistory;
@@ -46,7 +48,9 @@ class SyncProvider extends ChangeNotifier {
   Future<void> _loadLastSyncAt() async {
     final metadata = await _dbService.getSyncMetadata();
     final lastSync = metadata?['lastSyncAt'] as String?;
+    final lastPull = metadata?['lastPullAt'] as String?;
     _lastSyncAt = lastSync != null ? DateTime.parse(lastSync) : null;
+    _lastPullAt = lastPull != null ? DateTime.parse(lastPull) : null;
     notifyListeners();
   }
 

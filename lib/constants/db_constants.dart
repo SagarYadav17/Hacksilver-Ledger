@@ -68,6 +68,8 @@ class DbConstants {
 
   // Sync metadata columns
   static const String columnLastSyncAt = 'lastSyncAt';
+  static const String columnLastPullAt = 'lastPullAt';
+  static const String columnLastSyncError = 'lastSyncError';
   static const String columnPocketBaseUrl = 'pocketbaseUrl';
   static const String columnSyncHistoryStatus = 'status';
   static const String columnSyncHistorySyncedCount = 'syncedCount';
@@ -76,5 +78,6 @@ class DbConstants {
 
   // Database name
   static const String databaseName = 'hacksilver_ledger.db';
-  static const int databaseVersion = 6; // Bumped for PocketBase server URL column
+  // Development builds use a fresh database. Clear app data after schema edits.
+  static const int databaseVersion = 1;
 }

@@ -5,6 +5,7 @@ import '../models/transaction.dart' as model;
 import '../models/account.dart';
 import '../models/recurring_transaction.dart';
 import '../models/loan.dart';
+import '../models/sync_model.dart';
 import '../constants/db_constants.dart';
 
 class DatabaseService {
@@ -16,6 +17,24 @@ class DatabaseService {
   }
 
   DatabaseService._internal();
+
+  String get _now => DateTime.now().toUtc().toIso8601String();
+
+  void _prepareInsert(Map<String, dynamic> map) {
+    map.remove(DbConstants.columnId);
+    map[DbConstants.columnSyncId] ??= generateSyncId();
+    map[DbConstants.columnUpdatedAt] = _now;
+    map[DbConstants.columnSyncStatus] = 'pending';
+  }
+
+  void _prepareUpdate(Map<String, dynamic> map) {
+    map.remove(DbConstants.columnId);
+    if (map[DbConstants.columnSyncId] == null) {
+      map.remove(DbConstants.columnSyncId);
+    }
+    map[DbConstants.columnUpdatedAt] = _now;
+    map[DbConstants.columnSyncStatus] = 'pending';
+  }
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -29,7 +48,6 @@ class DatabaseService {
       path,
       version: DbConstants.databaseVersion,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
     );
   }
 
@@ -41,61 +59,6 @@ class DatabaseService {
     await _createLoansTable(db);
     await _createSyncMetadataTable(db);
     await _createSyncHistoryTable(db);
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await _addSyncColumns(db, DbConstants.tableCategories);
-      await _addSyncColumns(db, DbConstants.tableAccounts);
-      await _addSyncColumns(db, DbConstants.tableTransactions);
-      await _addSyncColumns(db, DbConstants.tableRecurringTransactions);
-      await _addSyncColumns(db, DbConstants.tableLoans);
-      await _createSyncMetadataTable(db);
-    }
-    if (oldVersion < 3) {
-      await _createSyncHistoryTable(db);
-    }
-    if (oldVersion < 4) {
-      try {
-        await db.execute(
-          'ALTER TABLE ${DbConstants.tableCategories} ADD COLUMN ${DbConstants.columnCategorySortOrder} INTEGER DEFAULT 0',
-        );
-        await db.execute(
-          'ALTER TABLE ${DbConstants.tableCategories} ADD COLUMN ${DbConstants.columnCategoryIsArchived} INTEGER DEFAULT 0',
-        );
-      } catch (e) {
-        // Columns may already exist, ignore error
-      }
-    }
-    if (oldVersion < 5) {
-      try {
-        await db.execute(
-          'ALTER TABLE ${DbConstants.tableTransactions} ADD COLUMN ${DbConstants.columnTransactionRecurringId} INTEGER',
-        );
-      } catch (e) {
-        // Column may already exist, ignore error
-      }
-    }
-    if (oldVersion < 6) {
-      try {
-        await db.execute(
-          'ALTER TABLE ${DbConstants.tableSyncMetadata} ADD COLUMN ${DbConstants.columnPocketBaseUrl} TEXT',
-        );
-      } catch (e) {
-        // Column may already exist, ignore error
-      }
-    }
-  }
-
-  Future<void> _addSyncColumns(Database db, String tableName) async {
-    try {
-      await db.execute('ALTER TABLE $tableName ADD COLUMN ${DbConstants.columnSyncId} TEXT');
-      await db.execute('ALTER TABLE $tableName ADD COLUMN ${DbConstants.columnUpdatedAt} TEXT');
-      await db.execute('ALTER TABLE $tableName ADD COLUMN ${DbConstants.columnDeletedAt} TEXT');
-      await db.execute('ALTER TABLE $tableName ADD COLUMN ${DbConstants.columnSyncStatus} TEXT DEFAULT "pending"');
-    } catch (e) {
-      // Columns may already exist, ignore error
-    }
   }
 
   Future<void> _createCategoriesTable(Database db) async {
@@ -111,10 +74,10 @@ class DatabaseService {
         ${DbConstants.columnCategoryIsCustom} INTEGER,
         ${DbConstants.columnCategorySortOrder} INTEGER DEFAULT 0,
         ${DbConstants.columnCategoryIsArchived} INTEGER DEFAULT 0,
-        ${DbConstants.columnSyncId} TEXT,
-        ${DbConstants.columnUpdatedAt} TEXT,
+        ${DbConstants.columnSyncId} TEXT NOT NULL UNIQUE,
+        ${DbConstants.columnUpdatedAt} TEXT NOT NULL,
         ${DbConstants.columnDeletedAt} TEXT,
-        ${DbConstants.columnSyncStatus} TEXT DEFAULT 'pending'
+        ${DbConstants.columnSyncStatus} TEXT NOT NULL DEFAULT 'pending'
       )
     ''');
   }
@@ -126,10 +89,10 @@ class DatabaseService {
         ${DbConstants.columnName} TEXT,
         type INTEGER,
         ${DbConstants.columnAccountBalance} REAL,
-        ${DbConstants.columnSyncId} TEXT,
-        ${DbConstants.columnUpdatedAt} TEXT,
+        ${DbConstants.columnSyncId} TEXT NOT NULL UNIQUE,
+        ${DbConstants.columnUpdatedAt} TEXT NOT NULL,
         ${DbConstants.columnDeletedAt} TEXT,
-        ${DbConstants.columnSyncStatus} TEXT DEFAULT 'pending'
+        ${DbConstants.columnSyncStatus} TEXT NOT NULL DEFAULT 'pending'
       )
     ''');
   }
@@ -150,10 +113,10 @@ class DatabaseService {
         ${DbConstants.columnTransactionLoanId} INTEGER,
         ${DbConstants.columnTransactionTransferAccountId} INTEGER,
         ${DbConstants.columnTransactionRecurringId} INTEGER,
-        ${DbConstants.columnSyncId} TEXT,
-        ${DbConstants.columnUpdatedAt} TEXT,
+        ${DbConstants.columnSyncId} TEXT NOT NULL UNIQUE,
+        ${DbConstants.columnUpdatedAt} TEXT NOT NULL,
         ${DbConstants.columnDeletedAt} TEXT,
-        ${DbConstants.columnSyncStatus} TEXT DEFAULT 'pending',
+        ${DbConstants.columnSyncStatus} TEXT NOT NULL DEFAULT 'pending',
         FOREIGN KEY(${DbConstants.columnTransactionCategoryId}) REFERENCES ${DbConstants.tableCategories}(${DbConstants.columnId}),
         FOREIGN KEY(${DbConstants.columnTransactionAccountId}) REFERENCES ${DbConstants.tableAccounts}(${DbConstants.columnId})
       )
@@ -174,10 +137,10 @@ class DatabaseService {
         nextDueDate TEXT,
         ${DbConstants.columnRecurringTransactionIsActive} INTEGER,
         ${DbConstants.columnRecurringTransactionNotes} TEXT,
-        ${DbConstants.columnSyncId} TEXT,
-        ${DbConstants.columnUpdatedAt} TEXT,
+        ${DbConstants.columnSyncId} TEXT NOT NULL UNIQUE,
+        ${DbConstants.columnUpdatedAt} TEXT NOT NULL,
         ${DbConstants.columnDeletedAt} TEXT,
-        ${DbConstants.columnSyncStatus} TEXT DEFAULT 'pending',
+        ${DbConstants.columnSyncStatus} TEXT NOT NULL DEFAULT 'pending',
         FOREIGN KEY(${DbConstants.columnRecurringTransactionCategoryId}) REFERENCES ${DbConstants.tableCategories}(${DbConstants.columnId})
       )
     ''');
@@ -197,10 +160,10 @@ class DatabaseService {
         ${DbConstants.columnLoanAmountPaid} REAL,
         isClosed INTEGER,
         notes TEXT,
-        ${DbConstants.columnSyncId} TEXT,
-        ${DbConstants.columnUpdatedAt} TEXT,
+        ${DbConstants.columnSyncId} TEXT NOT NULL UNIQUE,
+        ${DbConstants.columnUpdatedAt} TEXT NOT NULL,
         ${DbConstants.columnDeletedAt} TEXT,
-        ${DbConstants.columnSyncStatus} TEXT DEFAULT 'pending'
+        ${DbConstants.columnSyncStatus} TEXT NOT NULL DEFAULT 'pending'
       )
     ''');
   }
@@ -210,14 +173,16 @@ class DatabaseService {
       CREATE TABLE ${DbConstants.tableSyncMetadata}(
         ${DbConstants.columnId} INTEGER PRIMARY KEY,
         ${DbConstants.columnPocketBaseUrl} TEXT,
-        ${DbConstants.columnLastSyncAt} TEXT
+        ${DbConstants.columnLastSyncAt} TEXT,
+        ${DbConstants.columnLastPullAt} TEXT,
+        ${DbConstants.columnLastSyncError} TEXT
       )
     ''');
 
     // Insert default row
     await db.execute('''
-      INSERT INTO ${DbConstants.tableSyncMetadata} (${DbConstants.columnId}, ${DbConstants.columnPocketBaseUrl}, ${DbConstants.columnLastSyncAt})
-      VALUES (1, NULL, NULL)
+      INSERT INTO ${DbConstants.tableSyncMetadata} (${DbConstants.columnId}, ${DbConstants.columnPocketBaseUrl}, ${DbConstants.columnLastSyncAt}, ${DbConstants.columnLastPullAt}, ${DbConstants.columnLastSyncError})
+      VALUES (1, NULL, NULL, NULL, NULL)
     ''');
   }
 
@@ -237,16 +202,14 @@ class DatabaseService {
   Future<int> insertCategory(Category category) async {
     final db = await database;
     final map = category.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareInsert(map);
     return await db.insert(DbConstants.tableCategories, map);
   }
 
   Future<int> updateCategory(Category category) async {
     final db = await database;
     final map = category.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareUpdate(map);
     return await db.update(
       DbConstants.tableCategories,
       map,
@@ -261,7 +224,7 @@ class DatabaseService {
       DbConstants.tableTransactions,
       {
         DbConstants.columnTransactionCategoryId: toCategoryId,
-        DbConstants.columnUpdatedAt: DateTime.now().toIso8601String(),
+        DbConstants.columnUpdatedAt: _now,
         DbConstants.columnSyncStatus: 'pending',
       },
       where: '${DbConstants.columnTransactionCategoryId} = ?',
@@ -282,7 +245,7 @@ class DatabaseService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       DbConstants.tableCategories,
-      where: '${DbConstants.columnSyncStatus} != ? AND ${DbConstants.columnDeletedAt} IS NULL',
+      where: '${DbConstants.columnSyncStatus} != ?',
       whereArgs: ['synced'],
     );
     return List.generate(maps.length, (i) => Category.fromMap(maps[i]));
@@ -293,7 +256,8 @@ class DatabaseService {
     return await db.update(
       DbConstants.tableCategories,
       {
-        DbConstants.columnDeletedAt: DateTime.now().toIso8601String(),
+        DbConstants.columnDeletedAt: _now,
+        DbConstants.columnUpdatedAt: _now,
         DbConstants.columnSyncStatus: 'pending',
       },
       where: '${DbConstants.columnId} = ?',
@@ -314,8 +278,7 @@ class DatabaseService {
   Future<int> insertAccount(Account account) async {
     final db = await database;
     final map = account.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareInsert(map);
     return await db.insert(DbConstants.tableAccounts, map);
   }
 
@@ -332,7 +295,7 @@ class DatabaseService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       DbConstants.tableAccounts,
-      where: '${DbConstants.columnSyncStatus} != ? OR ${DbConstants.columnDeletedAt} IS NOT NULL',
+      where: '${DbConstants.columnSyncStatus} != ?',
       whereArgs: ['synced'],
     );
     return List.generate(maps.length, (i) => Account.fromMap(maps[i]));
@@ -341,8 +304,7 @@ class DatabaseService {
   Future<int> updateAccount(Account account) async {
     final db = await database;
     final map = account.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareUpdate(map);
     return await db.update(
       DbConstants.tableAccounts,
       map,
@@ -356,7 +318,8 @@ class DatabaseService {
     return await db.update(
       DbConstants.tableAccounts,
       {
-        DbConstants.columnDeletedAt: DateTime.now().toIso8601String(),
+        DbConstants.columnDeletedAt: _now,
+        DbConstants.columnUpdatedAt: _now,
         DbConstants.columnSyncStatus: 'pending',
       },
       where: '${DbConstants.columnId} = ?',
@@ -368,8 +331,7 @@ class DatabaseService {
   Future<int> insertTransaction(model.Transaction transaction) async {
     final db = await database;
     final map = transaction.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareInsert(map);
     return await db.insert(DbConstants.tableTransactions, map);
   }
 
@@ -390,7 +352,7 @@ class DatabaseService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       DbConstants.tableTransactions,
-      where: '${DbConstants.columnSyncStatus} != ? OR ${DbConstants.columnDeletedAt} IS NOT NULL',
+      where: '${DbConstants.columnSyncStatus} != ?',
       whereArgs: ['synced'],
       orderBy: '${DbConstants.columnDate} DESC',
     );
@@ -403,8 +365,7 @@ class DatabaseService {
   Future<int> updateTransaction(model.Transaction transaction) async {
     final db = await database;
     final map = transaction.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareUpdate(map);
     return await db.update(
       DbConstants.tableTransactions,
       map,
@@ -418,7 +379,8 @@ class DatabaseService {
     return await db.update(
       DbConstants.tableTransactions,
       {
-        DbConstants.columnDeletedAt: DateTime.now().toIso8601String(),
+        DbConstants.columnDeletedAt: _now,
+        DbConstants.columnUpdatedAt: _now,
         DbConstants.columnSyncStatus: 'pending',
       },
       where: '${DbConstants.columnId} = ?',
@@ -432,12 +394,8 @@ class DatabaseService {
   ) async {
     final db = await database;
     final map = transaction.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
-    return await db.insert(
-      DbConstants.tableRecurringTransactions,
-      map,
-    );
+    _prepareInsert(map);
+    return await db.insert(DbConstants.tableRecurringTransactions, map);
   }
 
   Future<int> updateRecurringTransaction(
@@ -445,8 +403,7 @@ class DatabaseService {
   ) async {
     final db = await database;
     final map = transaction.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareUpdate(map);
     return await db.update(
       DbConstants.tableRecurringTransactions,
       map,
@@ -471,7 +428,7 @@ class DatabaseService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       DbConstants.tableRecurringTransactions,
-      where: '${DbConstants.columnSyncStatus} != ? OR ${DbConstants.columnDeletedAt} IS NOT NULL',
+      where: '${DbConstants.columnSyncStatus} != ?',
       whereArgs: ['synced'],
     );
     return List.generate(
@@ -485,7 +442,8 @@ class DatabaseService {
     return await db.update(
       DbConstants.tableRecurringTransactions,
       {
-        DbConstants.columnDeletedAt: DateTime.now().toIso8601String(),
+        DbConstants.columnDeletedAt: _now,
+        DbConstants.columnUpdatedAt: _now,
         DbConstants.columnSyncStatus: 'pending',
       },
       where: '${DbConstants.columnId} = ?',
@@ -497,8 +455,7 @@ class DatabaseService {
   Future<int> insertLoan(Loan loan) async {
     final db = await database;
     final map = loan.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareInsert(map);
     return await db.insert(DbConstants.tableLoans, map);
   }
 
@@ -515,7 +472,7 @@ class DatabaseService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       DbConstants.tableLoans,
-      where: '${DbConstants.columnSyncStatus} != ? OR ${DbConstants.columnDeletedAt} IS NOT NULL',
+      where: '${DbConstants.columnSyncStatus} != ?',
       whereArgs: ['synced'],
     );
     return List.generate(maps.length, (i) => Loan.fromMap(maps[i]));
@@ -524,8 +481,7 @@ class DatabaseService {
   Future<int> updateLoan(Loan loan) async {
     final db = await database;
     final map = loan.toMap();
-    map[DbConstants.columnUpdatedAt] = DateTime.now().toIso8601String();
-    map[DbConstants.columnSyncStatus] = 'pending';
+    _prepareUpdate(map);
     return await db.update(
       DbConstants.tableLoans,
       map,
@@ -539,7 +495,8 @@ class DatabaseService {
     return await db.update(
       DbConstants.tableLoans,
       {
-        DbConstants.columnDeletedAt: DateTime.now().toIso8601String(),
+        DbConstants.columnDeletedAt: _now,
+        DbConstants.columnUpdatedAt: _now,
         DbConstants.columnSyncStatus: 'pending',
       },
       where: '${DbConstants.columnId} = ?',
@@ -548,14 +505,17 @@ class DatabaseService {
   }
 
   // Sync Status Updates
-  Future<void> markAsSynced(String tableName, int localId, String syncId) async {
+  Future<void> markAsSynced(
+    String tableName,
+    int localId,
+    String syncId,
+  ) async {
     final db = await database;
     await db.update(
       tableName,
       {
         DbConstants.columnSyncId: syncId,
         DbConstants.columnSyncStatus: 'synced',
-        DbConstants.columnUpdatedAt: DateTime.now().toIso8601String(),
       },
       where: '${DbConstants.columnId} = ?',
       whereArgs: [localId],
@@ -566,11 +526,92 @@ class DatabaseService {
     final db = await database;
     await db.update(
       tableName,
-      {
-        DbConstants.columnSyncStatus: 'failed',
-      },
+      {DbConstants.columnSyncStatus: 'failed'},
       where: '${DbConstants.columnId} = ?',
       whereArgs: [localId],
+    );
+  }
+
+  Future<String> getSyncId(String tableName, int localId) async {
+    final db = await database;
+    final rows = await db.query(
+      tableName,
+      columns: [DbConstants.columnSyncId],
+      where: '${DbConstants.columnId} = ?',
+      whereArgs: [localId],
+      limit: 1,
+    );
+    final syncId = rows.isEmpty
+        ? null
+        : rows.first[DbConstants.columnSyncId] as String?;
+    if (syncId == null) {
+      throw StateError('Missing sync ID for $tableName/$localId');
+    }
+    return syncId;
+  }
+
+  Future<int?> getLocalId(String tableName, String syncId) async {
+    final db = await database;
+    final rows = await db.query(
+      tableName,
+      columns: [DbConstants.columnId],
+      where: '${DbConstants.columnSyncId} = ?',
+      whereArgs: [syncId],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first[DbConstants.columnId] as int;
+  }
+
+  /// Applies a remote record unless a newer local change still needs upload.
+  Future<RemoteApplyResult> applyRemoteRecord(
+    String tableName,
+    Map<String, dynamic> values,
+  ) async {
+    final db = await database;
+    final syncId = values[DbConstants.columnSyncId] as String;
+    final remoteUpdatedAt = values[DbConstants.columnUpdatedAt] as String;
+    final local = await db.query(
+      tableName,
+      where: '${DbConstants.columnSyncId} = ?',
+      whereArgs: [syncId],
+      limit: 1,
+    );
+
+    if (local.isEmpty) {
+      await db.insert(tableName, values);
+      return RemoteApplyResult.applied;
+    }
+
+    final current = local.first;
+    final localUpdatedAt = DateTime.parse(
+      current[DbConstants.columnUpdatedAt] as String,
+    ).toUtc();
+    if (!shouldApplyRemote(localUpdatedAt, DateTime.parse(remoteUpdatedAt))) {
+      await db.update(
+        tableName,
+        {DbConstants.columnSyncStatus: 'conflict'},
+        where: '${DbConstants.columnId} = ?',
+        whereArgs: [current[DbConstants.columnId]],
+      );
+      return RemoteApplyResult.localNewer;
+    }
+
+    await db.update(
+      tableName,
+      values,
+      where: '${DbConstants.columnId} = ?',
+      whereArgs: [current[DbConstants.columnId]],
+    );
+    return RemoteApplyResult.applied;
+  }
+
+  Future<void> updateLastPullTime() async {
+    final db = await database;
+    await db.update(
+      DbConstants.tableSyncMetadata,
+      {DbConstants.columnLastPullAt: _now},
+      where: '${DbConstants.columnId} = ?',
+      whereArgs: [1],
     );
   }
 
@@ -603,8 +644,19 @@ class DatabaseService {
     await db.update(
       DbConstants.tableSyncMetadata,
       {
-        DbConstants.columnLastSyncAt: DateTime.now().toIso8601String(),
+        DbConstants.columnLastSyncAt: _now,
+        DbConstants.columnLastSyncError: null,
       },
+      where: '${DbConstants.columnId} = ?',
+      whereArgs: [1],
+    );
+  }
+
+  Future<void> recordSyncError(String message) async {
+    final db = await database;
+    await db.update(
+      DbConstants.tableSyncMetadata,
+      {DbConstants.columnLastSyncError: message},
       where: '${DbConstants.columnId} = ?',
       whereArgs: [1],
     );
@@ -617,6 +669,8 @@ class DatabaseService {
       {
         DbConstants.columnPocketBaseUrl: null,
         DbConstants.columnLastSyncAt: null,
+        DbConstants.columnLastPullAt: null,
+        DbConstants.columnLastSyncError: null,
       },
       where: '${DbConstants.columnId} = ?',
       whereArgs: [1],
@@ -633,7 +687,7 @@ class DatabaseService {
       DbConstants.columnSyncHistoryStatus: success ? 'success' : 'failed',
       DbConstants.columnSyncHistorySyncedCount: syncedCount,
       DbConstants.columnSyncHistoryMessage: message,
-      DbConstants.columnSyncHistoryCreatedAt: DateTime.now().toIso8601String(),
+      DbConstants.columnSyncHistoryCreatedAt: _now,
     });
   }
 
@@ -654,3 +708,8 @@ class DatabaseService {
     }
   }
 }
+
+enum RemoteApplyResult { applied, localNewer }
+
+bool shouldApplyRemote(DateTime localUpdatedAt, DateTime remoteUpdatedAt) =>
+    !localUpdatedAt.toUtc().isAfter(remoteUpdatedAt.toUtc());

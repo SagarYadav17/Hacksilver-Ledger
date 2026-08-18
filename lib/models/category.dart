@@ -107,10 +107,14 @@ class Category implements SyncableModel {
       sortOrder: map['sortOrder'] ?? 0,
       isArchived: map['isArchived'] == 1,
       syncId: map['syncId'],
-      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
-      deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
-      syncStatus: map['syncStatus'] != null 
-          ? SyncStatusExtension.fromValue(map['syncStatus']) 
+      updatedAt: map['updatedAt'] != null
+          ? DateTime.parse(map['updatedAt'])
+          : null,
+      deletedAt: map['deletedAt'] != null
+          ? DateTime.parse(map['deletedAt'])
+          : null,
+      syncStatus: map['syncStatus'] != null
+          ? SyncStatusExtension.fromValue(map['syncStatus'])
           : SyncStatus.pending,
     );
   }
@@ -127,6 +131,8 @@ class Category implements SyncableModel {
       'color_value': colorValue,
       'type': type.name,
       'is_custom': isCustom,
+      'sort_order': sortOrder,
+      'is_archived': isArchived,
       'updated_at': (updatedAt ?? DateTime.now()).toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
     };
