@@ -6,6 +6,7 @@ import '../providers/loan_provider.dart';
 import '../providers/currency_provider.dart';
 import '../constants/app_constants.dart';
 import '../utils/security_utils.dart';
+import '../utils/amount_colors.dart';
 
 class AddLoanScreen extends StatefulWidget {
   final Loan? loan;
@@ -87,11 +88,13 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       _formKey.currentState!.save();
 
       // Validate title
-      final titleValidation = SecurityUtils.validateTitle(_titleController.text);
+      final titleValidation = SecurityUtils.validateTitle(
+        _titleController.text,
+      );
       if (!titleValidation.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(titleValidation.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(titleValidation.errorMessage!)));
         return;
       }
 
@@ -101,18 +104,20 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         maxValue: 999999999.99,
       );
       if (!amountValidation.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(amountValidation.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(amountValidation.errorMessage!)));
         return;
       }
 
       // Validate interest rate
-      final rateValidation = SecurityUtils.validateInterestRate(_rateController.text);
+      final rateValidation = SecurityUtils.validateInterestRate(
+        _rateController.text,
+      );
       if (!rateValidation.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(rateValidation.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(rateValidation.errorMessage!)));
         return;
       }
 
@@ -124,18 +129,20 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         fieldName: 'Tenure',
       );
       if (!tenureValidation.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tenureValidation.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(tenureValidation.errorMessage!)));
         return;
       }
 
       // Validate notes (optional)
-      final notesValidation = SecurityUtils.validateNotes(_notesController.text);
+      final notesValidation = SecurityUtils.validateNotes(
+        _notesController.text,
+      );
       if (!notesValidation.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(notesValidation.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(notesValidation.errorMessage!)));
         return;
       }
 
@@ -187,6 +194,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     final currencySymbol =
         AppConstants.currencySymbols[currencyCode] ?? currencyCode;
     final isEditing = widget.loan != null;
+    final colorScheme = Theme.of(context).colorScheme;
+    final typeColor = _type == LoanType.taken
+        ? expenseColor(colorScheme)
+        : availableColor(colorScheme);
 
     return Scaffold(
       appBar: AppBar(title: Text(isEditing ? 'Edit Loan' : 'Add Loan')),
@@ -196,30 +207,24 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // Type Selection
-              RadioGroup<LoanType>(
-                groupValue: _type,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _type = value);
-                  }
-                },
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<LoanType>(
-                        title: const Text('Loan Taken'),
-                        value: LoanType.taken,
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<LoanType>(
-                        title: const Text('Loan Given'),
-                        value: LoanType.given,
-                      ),
-                    ),
-                  ],
-                ),
+              Text('Type', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              SegmentedButton<LoanType>(
+                segments: const [
+                  ButtonSegment(
+                    value: LoanType.taken,
+                    icon: Icon(Icons.south_west_rounded),
+                    label: Text('Borrowed'),
+                  ),
+                  ButtonSegment(
+                    value: LoanType.given,
+                    icon: Icon(Icons.north_east_rounded),
+                    label: Text('Lent'),
+                  ),
+                ],
+                selected: {_type},
+                onSelectionChanged: (selection) =>
+                    setState(() => _type = selection.first),
               ),
 
               const SizedBox(height: 16),
@@ -285,8 +290,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: plannedColor(colorScheme).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
                   children: [
@@ -299,7 +304,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                       '$currencySymbol${_calculatedEMI.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 24,
-                        color: Theme.of(context).primaryColor,
+                        color: plannedColor(colorScheme),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -319,9 +324,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
 
               const SizedBox(height: 24),
 
-              ElevatedButton(
+              FilledButton(
                 onPressed: _submitData,
-                style: ElevatedButton.styleFrom(
+                style: FilledButton.styleFrom(
+                  backgroundColor: typeColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: Text(isEditing ? 'Update Loan' : 'Save Loan'),

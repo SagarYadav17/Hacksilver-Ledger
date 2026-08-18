@@ -12,6 +12,7 @@ import '../providers/account_provider.dart';
 import '../constants/app_constants.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'loan_details_screen.dart';
+import '../utils/amount_colors.dart';
 
 class LoanListScreen extends StatefulWidget {
   const LoanListScreen({super.key});
@@ -109,8 +110,9 @@ class _LoanStatTiles extends StatelessWidget {
                 child: _StatTile(
                   label: type == LoanType.taken ? 'You owe' : 'Owed to you',
                   value: '$currencySymbol${outstanding.toStringAsFixed(0)}',
-                  color: colorScheme.secondaryContainer,
-                  onColor: colorScheme.onSecondaryContainer,
+                  accent: type == LoanType.taken
+                      ? expenseColor(colorScheme)
+                      : availableColor(colorScheme),
                 ),
               ),
               const SizedBox(width: 12),
@@ -120,8 +122,7 @@ class _LoanStatTiles extends StatelessWidget {
                   value: nextEmiDate != null
                       ? DateFormat.MMMd().format(nextEmiDate)
                       : '-',
-                  color: colorScheme.secondaryContainer,
-                  onColor: colorScheme.onSecondaryContainer,
+                  accent: plannedColor(colorScheme),
                 ),
               ),
             ],
@@ -135,14 +136,12 @@ class _LoanStatTiles extends StatelessWidget {
 class _StatTile extends StatelessWidget {
   final String label;
   final String value;
-  final Color color;
-  final Color onColor;
+  final Color accent;
 
   const _StatTile({
     required this.label,
     required this.value,
-    required this.color,
-    required this.onColor,
+    required this.accent,
   });
 
   @override
@@ -150,7 +149,7 @@ class _StatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color,
+        color: accent.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -160,13 +159,13 @@ class _StatTile extends StatelessWidget {
             label,
             style: Theme.of(
               context,
-            ).textTheme.labelSmall?.copyWith(color: onColor),
+            ).textTheme.labelSmall?.copyWith(color: accent),
           ),
           const SizedBox(height: 4),
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: onColor,
+              color: accent,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -231,184 +230,182 @@ void showLoanPaymentDialog(
   Loan loan,
   LoanProvider loanProvider,
 ) {
-    final amountController = TextEditingController(
-      text: loan.emiAmount.toStringAsFixed(2),
-    );
-    final commentsController = TextEditingController();
-    DateTime selectedDate = DateTime.now();
-    int? selectedAccountId;
+  final amountController = TextEditingController(
+    text: loan.emiAmount.toStringAsFixed(2),
+  );
+  final commentsController = TextEditingController();
+  DateTime selectedDate = DateTime.now();
+  int? selectedAccountId;
 
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogContext, setState) {
-          final currencyProvider = context.read<CurrencyProvider>();
-          final accountProvider = context.read<AccountProvider>();
-          final currencySymbol =
-              AppConstants.currencySymbols[currencyProvider.currency] ??
-              currencyProvider.currency;
-          final accounts = accountProvider.accounts;
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (dialogContext, setState) {
+        final currencyProvider = context.read<CurrencyProvider>();
+        final accountProvider = context.read<AccountProvider>();
+        final currencySymbol =
+            AppConstants.currencySymbols[currencyProvider.currency] ??
+            currencyProvider.currency;
+        final accounts = accountProvider.accounts;
 
-          return AlertDialog(
-            title: Text(
-              loan.type == LoanType.taken ? 'Pay EMI' : 'Receive EMI',
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Loan: ${loan.title}'),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: amountController,
-                  decoration: InputDecoration(
-                    labelText: 'Amount',
-                    prefixText: '$currencySymbol ',
-                  ),
-                  keyboardType: TextInputType.number,
+        return AlertDialog(
+          title: Text(loan.type == LoanType.taken ? 'Pay EMI' : 'Receive EMI'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Loan: ${loan.title}'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                decoration: InputDecoration(
+                  labelText: 'Amount',
+                  prefixText: '$currencySymbol ',
                 ),
-                TextField(
-                  controller: commentsController,
-                  decoration: const InputDecoration(labelText: 'Comments'),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<int>(
-                  initialValue: selectedAccountId,
-                  decoration: const InputDecoration(
-                    labelText: 'Account',
-                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                  ),
-                  items: accounts
-                      .map(
-                        (acc) => DropdownMenuItem<int>(
-                          value: acc.id,
-                          child: Text(acc.name),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedAccountId = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Text('Date: ${DateFormat.yMd().format(selectedDate)}'),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: dialogContext,
-                          initialDate: selectedDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime.now(),
-                        );
-                        if (!dialogContext.mounted) return;
-                        if (picked != null) {
-                          setState(() {
-                            selectedDate = picked;
-                          });
-                        }
-                      },
-                      child: const Text('Change Date'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
+                keyboardType: TextInputType.number,
               ),
-              ElevatedButton(
-                onPressed: () {
-                  final amount = double.tryParse(amountController.text);
-                  if (amount == null || amount <= 0) return;
-
-                  if (accounts.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please create an account first'),
+              TextField(
+                controller: commentsController,
+                decoration: const InputDecoration(labelText: 'Comments'),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                initialValue: selectedAccountId,
+                decoration: const InputDecoration(
+                  labelText: 'Account',
+                  prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                ),
+                items: accounts
+                    .map(
+                      (acc) => DropdownMenuItem<int>(
+                        value: acc.id,
+                        child: Text(acc.name),
                       ),
-                    );
-                    return;
-                  }
-
-                  if (selectedAccountId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please select an account')),
-                    );
-                    return;
-                  }
-
-                  // 1. Create a Transaction linked to the loan
-                  // This will automatically update the loan balance via TransactionProvider
-
-                  final txProvider = Provider.of<TransactionProvider>(
-                    ctx,
-                    listen: false,
-                  );
-                  final catProvider = Provider.of<CategoryProvider>(
-                    ctx,
-                    listen: false,
-                  );
-
-                  final txType = loan.type == LoanType.taken
-                      ? CategoryType.expense
-                      : CategoryType.income;
-                  final matchingCategories = catProvider.categories
-                      .where((c) => c.type == txType)
-                      .toList();
-
-                  if (matchingCategories.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'No category found for this loan transaction type',
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-
-                  final loanCategory = matchingCategories.firstWhere(
-                    (c) => c.name == 'Loan Payment',
-                    orElse: () => matchingCategories.first,
-                  );
-
-                  final newTx = Transaction(
-                    title: 'EMI: ${loan.title}',
-                    amount: amount,
-                    date: selectedDate,
-                    type: txType,
-                    categoryId: loanCategory.id!,
-                    notes: commentsController.text,
-                    accountId: selectedAccountId,
-                    loanId: loan.id, // LINK TO LOAN
-                  );
-
-                  txProvider.addTransaction(newTx);
-
-                  // Refresh loans (TransactionProvider updates DB, but LoanProvider might need refresh)
-                  // Actually TransactionProvider doesn't notify LoanProvider.
-                  // But LoanProvider fetches from DB on next build if we tell it to?
-                  // Or we can manually call fetchLoans()
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    loanProvider.fetchLoans();
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedAccountId = value;
                   });
-
-                  Navigator.pop(ctx);
                 },
-                child: const Text('Confirm'),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Text('Date: ${DateFormat.yMd().format(selectedDate)}'),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: dialogContext,
+                        initialDate: selectedDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now(),
+                      );
+                      if (!dialogContext.mounted) return;
+                      if (picked != null) {
+                        setState(() {
+                          selectedDate = picked;
+                        });
+                      }
+                    },
+                    child: const Text('Change Date'),
+                  ),
+                ],
               ),
             ],
-          );
-        },
-      ),
-    );
-  }
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final amount = double.tryParse(amountController.text);
+                if (amount == null || amount <= 0) return;
+
+                if (accounts.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please create an account first'),
+                    ),
+                  );
+                  return;
+                }
+
+                if (selectedAccountId == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select an account')),
+                  );
+                  return;
+                }
+
+                // 1. Create a Transaction linked to the loan
+                // This will automatically update the loan balance via TransactionProvider
+
+                final txProvider = Provider.of<TransactionProvider>(
+                  ctx,
+                  listen: false,
+                );
+                final catProvider = Provider.of<CategoryProvider>(
+                  ctx,
+                  listen: false,
+                );
+
+                final txType = loan.type == LoanType.taken
+                    ? CategoryType.expense
+                    : CategoryType.income;
+                final matchingCategories = catProvider.categories
+                    .where((c) => c.type == txType)
+                    .toList();
+
+                if (matchingCategories.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'No category found for this loan transaction type',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                final loanCategory = matchingCategories.firstWhere(
+                  (c) => c.name == 'Loan Payment',
+                  orElse: () => matchingCategories.first,
+                );
+
+                final newTx = Transaction(
+                  title: 'EMI: ${loan.title}',
+                  amount: amount,
+                  date: selectedDate,
+                  type: txType,
+                  categoryId: loanCategory.id!,
+                  notes: commentsController.text,
+                  accountId: selectedAccountId,
+                  loanId: loan.id, // LINK TO LOAN
+                );
+
+                txProvider.addTransaction(newTx);
+
+                // Refresh loans (TransactionProvider updates DB, but LoanProvider might need refresh)
+                // Actually TransactionProvider doesn't notify LoanProvider.
+                // But LoanProvider fetches from DB on next build if we tell it to?
+                // Or we can manually call fetchLoans()
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  loanProvider.fetchLoans();
+                });
+
+                Navigator.pop(ctx);
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
 
 class _LoanCard extends StatelessWidget {
   final Loan loan;
@@ -433,7 +430,11 @@ class _LoanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final accent = colorScheme.primary;
+    final accent = loan.isClosed
+        ? groupingColor(colorScheme)
+        : type == LoanType.taken
+        ? expenseColor(colorScheme)
+        : availableColor(colorScheme);
     final progress = loan.amount <= 0 ? 0.0 : loan.amountPaid / loan.amount;
     final remaining = (loan.amount - loan.amountPaid).clamp(0.0, loan.amount);
     final clampedProgress = progress.clamp(0.0, 1.0).toDouble();
@@ -461,7 +462,7 @@ class _LoanCard extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
+                        color: accent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -470,7 +471,7 @@ class _LoanCard extends StatelessWidget {
                             : type == LoanType.taken
                             ? Icons.south_west_rounded
                             : Icons.north_east_rounded,
-                        color: colorScheme.onPrimaryContainer,
+                        color: accent,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -498,8 +499,8 @@ class _LoanCard extends StatelessWidget {
                     if (!loan.isClosed)
                       _StatusPill(
                         label: 'ACTIVE',
-                        color: colorScheme.secondaryContainer,
-                        onColor: colorScheme.onSecondaryContainer,
+                        color: accent.withValues(alpha: 0.12),
+                        onColor: accent,
                       ),
                   ],
                 ),

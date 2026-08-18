@@ -5,6 +5,7 @@ import '../providers/currency_provider.dart';
 import '../providers/security_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../utils/amount_colors.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -188,6 +189,7 @@ class MoreScreen extends StatelessWidget {
                     _navTile(
                       context,
                       icon: Icons.cloud_sync_outlined,
+                      color: plannedColor(colorScheme),
                       title: 'Sync & backup',
                       subtitle: authProvider.isLoggedIn
                           ? 'Cloud copy connected'
@@ -198,6 +200,7 @@ class MoreScreen extends StatelessWidget {
                     _navTile(
                       context,
                       icon: Icons.category_outlined,
+                      color: groupingColor(colorScheme),
                       title: 'Categories',
                       subtitle: 'Reorder, merge, archive',
                       route: '/categories',
@@ -206,6 +209,7 @@ class MoreScreen extends StatelessWidget {
                     _navTile(
                       context,
                       icon: Icons.event_repeat_outlined,
+                      color: plannedColor(colorScheme),
                       title: 'Recurring',
                       subtitle: 'Manage scheduled transactions',
                       route: '/recurring-transactions',
@@ -226,6 +230,7 @@ class MoreScreen extends StatelessWidget {
             child: _navTile(
               context,
               icon: Icons.bug_report_outlined,
+              color: groupingColor(colorScheme),
               title: 'Diagnostics & error log',
               subtitle: null,
               route: '/diagnostics',
@@ -251,15 +256,13 @@ class MoreScreen extends StatelessWidget {
   Widget _navTile(
     BuildContext context, {
     required IconData icon,
+    required Color color,
     required String title,
     required String? subtitle,
     required String route,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
+      leading: Icon(icon, color: color),
       title: Text(title),
       subtitle: subtitle != null ? Text(subtitle) : null,
       trailing: const Icon(Icons.chevron_right),

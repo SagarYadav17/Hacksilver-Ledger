@@ -9,6 +9,7 @@ import '../providers/security_provider.dart';
 import '../models/category.dart';
 import '../constants/app_constants.dart';
 import '../utils/icon_utils.dart';
+import '../utils/amount_colors.dart';
 
 enum _Period { threeMonths, sixMonths, twelveMonths }
 
@@ -34,6 +35,7 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   _Period _period = _Period.sixMonths;
+  bool _comparePreviousPeriod = false;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +68,24 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               .where((t) => t.type == CategoryType.expense)
               .fold<double>(0, (sum, t) => sum + t.amount);
           final savingsRate = income <= 0 ? 0.0 : (income - expense) / income;
+          final previousPeriodStart = DateTime(
+            periodStart.year,
+            periodStart.month - _period.months,
+            1,
+          );
+          final previousPeriodTxs = txProvider.transactions
+              .where(
+                (t) =>
+                    !t.date.isBefore(previousPeriodStart) &&
+                    t.date.isBefore(periodStart),
+              )
+              .toList();
+          final previousIncome = previousPeriodTxs
+              .where((t) => t.type == CategoryType.income)
+              .fold<double>(0, (sum, t) => sum + t.amount);
+          final previousExpense = previousPeriodTxs
+              .where((t) => t.type == CategoryType.expense)
+              .fold<double>(0, (sum, t) => sum + t.amount);
 
           final months = List.generate(
             _period.months,
@@ -100,10 +120,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           final categoryEntries = byCategory.entries.toList()
             ..sort((a, b) => b.value.compareTo(a.value));
           final palette = [
-            colorScheme.primary,
-            colorScheme.tertiary,
-            colorScheme.secondary,
-            colorScheme.error,
+            incomeColor(colorScheme),
+            plannedColor(colorScheme),
+            groupingColor(colorScheme),
+            expenseColor(colorScheme),
             colorScheme.primaryContainer,
             colorScheme.secondaryContainer,
           ];
@@ -119,6 +139,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 onSelectionChanged: (selection) =>
                     setState(() => _period = selection.first),
               ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilterChip(
+                  label: Text('Compare previous ${_period.label}'),
+                  selected: _comparePreviousPeriod,
+                  onSelected: (selected) =>
+                      setState(() => _comparePreviousPeriod = selected),
+                ),
+              ),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -128,7 +158,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       value: securityProvider.maskAmount(
                         formatter.format(income),
                       ),
-                      color: colorScheme.primary,
+                      color: incomeColor(colorScheme),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -138,7 +168,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       value: securityProvider.maskAmount(
                         formatter.format(expense),
                       ),
-                      color: colorScheme.error,
+                      color: expenseColor(colorScheme),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -147,11 +177,83 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       label: 'Savings rate',
                       value:
                           '${(savingsRate * 100).clamp(-999, 999).toStringAsFixed(0)}%',
-                      color: colorScheme.secondary,
+                      color: groupingColor(colorScheme),
                     ),
                   ),
                 ],
               ),
+              if (_comparePreviousPeriod) ...[
+                const SizedBox(height: 16),
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Change vs previous ${_period.label}',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${DateFormat.yMMMd().format(previousPeriodStart)} – '
+                          '${DateFormat.yMMMd().format(periodStart.subtract(const Duration(days: 1)))}',
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _ComparisonTile(
+                                label: 'Income',
+                                value: securityProvider.maskAmount(
+                                  _formatDifference(
+                                    income - previousIncome,
+                                    formatter,
+                                  ),
+                                ),
+                                color: incomeColor(colorScheme),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _ComparisonTile(
+                                label: 'Expense',
+                                value: securityProvider.maskAmount(
+                                  _formatDifference(
+                                    expense - previousExpense,
+                                    formatter,
+                                  ),
+                                ),
+                                color: expenseColor(colorScheme),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _ComparisonTile(
+                                label: 'Net',
+                                value: securityProvider.maskAmount(
+                                  _formatDifference(
+                                    (income - expense) -
+                                        (previousIncome - previousExpense),
+                                    formatter,
+                                  ),
+                                ),
+                                color: groupingColor(colorScheme),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               Card(
                 elevation: 0,
@@ -221,13 +323,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                       toY: buckets[i].income,
                                       width: 8,
                                       borderRadius: BorderRadius.circular(4),
-                                      color: colorScheme.primary,
+                                      color: incomeColor(colorScheme),
                                     ),
                                     BarChartRodData(
                                       toY: buckets[i].expense,
                                       width: 8,
                                       borderRadius: BorderRadius.circular(4),
-                                      color: colorScheme.error,
+                                      color: expenseColor(colorScheme),
                                     ),
                                   ],
                                 ),
@@ -316,6 +418,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
     );
   }
+
+  String _formatDifference(double amount, NumberFormat formatter) {
+    if (amount > 0) return '+${formatter.format(amount)}';
+    if (amount < 0) return '-${formatter.format(amount.abs())}';
+    return formatter.format(0);
+  }
 }
 
 class _SummaryTile extends StatelessWidget {
@@ -356,6 +464,41 @@ class _SummaryTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ComparisonTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _ComparisonTile({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }

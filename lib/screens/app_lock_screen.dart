@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/security_provider.dart';
+import '../utils/amount_colors.dart';
 
 class AppLockScreen extends StatefulWidget {
   const AppLockScreen({super.key});
@@ -48,12 +49,12 @@ class _AppLockScreenState extends State<AppLockScreen> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
+                      color: groupingColor(colorScheme).withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
                       Icons.lock_outline_rounded,
-                      color: colorScheme.onPrimaryContainer,
+                      color: groupingColor(colorScheme),
                       size: 34,
                     ),
                   ),

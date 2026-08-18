@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/account.dart';
 import '../providers/account_provider.dart';
 import '../utils/security_utils.dart';
+import '../utils/amount_colors.dart';
 
 class AddAccountScreen extends StatefulWidget {
   final Account? account;
@@ -40,9 +41,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       // Validate account name
       final nameValidation = SecurityUtils.validateTitle(_name, maxLength: 50);
       if (!nameValidation.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(nameValidation.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(nameValidation.errorMessage!)));
         return;
       }
       _name = nameValidation.value;
@@ -88,17 +89,43 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.account == null ? 'Add Account' : 'Edit Account'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: groupingColor(colorScheme).withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: groupingColor(colorScheme),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.account == null
+                            ? 'Create a place for cash, bank money, or a card.'
+                            : 'Update this account without changing its transactions.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
               TextFormField(
                 initialValue: _name,
                 decoration: const InputDecoration(labelText: 'Account Name'),
@@ -148,9 +175,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
+              FilledButton(
                 onPressed: _submitData,
-                style: ElevatedButton.styleFrom(
+                style: FilledButton.styleFrom(
+                  backgroundColor: groupingColor(colorScheme),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: Text(

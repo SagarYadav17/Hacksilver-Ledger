@@ -61,7 +61,14 @@ class LoanDetailsScreen extends StatelessWidget {
               : loan.amountPaid / loan.amount;
           final clampedProgress = progress.clamp(0.0, 1.0).toDouble();
           final colorScheme = Theme.of(context).colorScheme;
-          final accent = colorScheme.primary;
+          final accent = loan.isClosed
+              ? groupingColor(colorScheme)
+              : loan.type == LoanType.taken
+              ? expenseColor(colorScheme)
+              : availableColor(colorScheme);
+          final onAccent = colorScheme.brightness == Brightness.dark
+              ? Colors.black
+              : Colors.white;
 
           return Column(
             children: [
@@ -86,7 +93,7 @@ class LoanDetailsScreen extends StatelessWidget {
               Card(
                 margin: const EdgeInsets.all(16),
                 elevation: 0,
-                color: colorScheme.primary,
+                color: accent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -104,17 +111,15 @@ class LoanDetailsScreen extends StatelessWidget {
                             CircularProgressIndicator(
                               value: clampedProgress,
                               strokeWidth: 7,
-                              backgroundColor: colorScheme.onPrimary.withValues(
-                                alpha: 0.2,
-                              ),
+                              backgroundColor: onAccent.withValues(alpha: 0.2),
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.onPrimary,
+                                onAccent,
                               ),
                             ),
                             Text(
                               '${(clampedProgress * 100).toStringAsFixed(0)}%',
                               style: TextStyle(
-                                color: colorScheme.onPrimary,
+                                color: onAccent,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -147,15 +152,13 @@ class LoanDetailsScreen extends StatelessWidget {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: colorScheme.onPrimary.withValues(
-                                        alpha: 0.18,
-                                      ),
+                                      color: onAccent.withValues(alpha: 0.18),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
                                       'ACTIVE',
                                       style: TextStyle(
-                                        color: colorScheme.onPrimary,
+                                        color: onAccent,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 11,
                                       ),
@@ -167,9 +170,7 @@ class LoanDetailsScreen extends StatelessWidget {
                             Text(
                               'Remaining $currencySymbol${(loan.amount - loan.amountPaid).clamp(0.0, loan.amount).toStringAsFixed(0)} of $currencySymbol${loan.amount.toStringAsFixed(0)}',
                               style: TextStyle(
-                                color: colorScheme.onPrimary.withValues(
-                                  alpha: 0.85,
-                                ),
+                                color: onAccent.withValues(alpha: 0.85),
                               ),
                             ),
                           ],
@@ -186,21 +187,21 @@ class LoanDetailsScreen extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
+                      color: plannedColor(colorScheme).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.notifications_active_outlined,
-                          color: colorScheme.onPrimaryContainer,
+                          color: plannedColor(colorScheme),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'EMI $currencySymbol${loan.emiAmount.toStringAsFixed(0)} due next',
                             style: TextStyle(
-                              color: colorScheme.onPrimaryContainer,
+                              color: plannedColor(colorScheme),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -308,7 +309,6 @@ class LoanDetailsScreen extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _EmiTimelineCard extends StatelessWidget {
@@ -518,12 +518,18 @@ class _EmiStepRow extends StatelessWidget {
                   ),
                   Text(
                     DateFormat.MMMd().format(dueDate),
-                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     amountLabel,
-                    style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),

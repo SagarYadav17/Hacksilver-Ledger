@@ -21,7 +21,10 @@ class RecurringTransactionListScreen extends StatelessWidget {
         builder: (context, provider, child) {
           final transactions = provider.recurringTransactions;
           if (transactions.isEmpty) {
-            return const Center(child: Text('No recurring transactions yet.'));
+            return _EmptyRecurring(
+              onAdd: () =>
+                  Navigator.of(context).pushNamed('/add-recurring-transaction'),
+            );
           }
 
           final active = transactions.where((tx) => tx.isActive).toList();
@@ -36,19 +39,46 @@ class RecurringTransactionListScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(16),
+                  color: plannedColor(colorScheme).withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                child: Text(
-                  '\$${scheduledThisMonth.toStringAsFixed(0)} scheduled this month · '
-                  '${active.length} upcoming',
-                  style: TextStyle(
-                    color: colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'PLANNED THIS MONTH',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: plannedColor(colorScheme),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.7,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '\$${scheduledThisMonth.toStringAsFixed(0)}',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: plannedColor(colorScheme),
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${active.length} active ${active.length == 1 ? 'schedule' : 'schedules'}',
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
+              Text(
+                'UPCOMING',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.7,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
               for (final tx in transactions)
                 _RecurringRow(
                   key: ValueKey(tx.id),
@@ -114,8 +144,8 @@ class _RecurringRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: tx.isActive ? colorScheme.surface : null,
-        borderRadius: BorderRadius.circular(16),
+        color: tx.isActive ? colorScheme.surfaceContainerLow : null,
+        borderRadius: BorderRadius.circular(20),
         border: !tx.isActive
             ? Border.all(color: colorScheme.outlineVariant, width: 1)
             : Border.all(color: colorScheme.outlineVariant, width: 0.5),
@@ -153,9 +183,17 @@ class _RecurringRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
+                  Text(
+                    '\$${tx.amount.toStringAsFixed(0)}',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: amountColorForType(colorScheme, tx.type),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
                   if (tx.isActive)
                     Text(
-                      '\$${tx.amount.toStringAsFixed(0)} · ${tx.frequency.toString().split('.').last} · next ${DateFormat.MMMd().format(tx.nextDueDate)}',
+                      '${tx.frequency.toString().split('.').last} · next ${DateFormat.MMMd().format(tx.nextDueDate)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     )
                   else
@@ -184,6 +222,56 @@ class _RecurringRow extends StatelessWidget {
                 color: colorScheme.onSurfaceVariant,
               ),
               onPressed: onDelete,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyRecurring extends StatelessWidget {
+  final VoidCallback onAdd;
+
+  const _EmptyRecurring({required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: plannedColor(scheme).withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.calendar_month_outlined,
+                size: 34,
+                color: plannedColor(scheme),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Plan recurring money',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add bills, income, and other regular entries so they never slip by.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add),
+              label: const Text('Add schedule'),
             ),
           ],
         ),

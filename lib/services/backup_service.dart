@@ -12,7 +12,7 @@ import '../utils/security_utils.dart';
 class BackupService {
   // Valid backup file extensions
   static const List<String> _validExtensions = ['.db', '.sqlite', '.ledger'];
-  
+
   // Maximum backup file size (50MB)
   static const int _maxFileSizeBytes = 50 * 1024 * 1024;
 
@@ -189,11 +189,8 @@ class BackupService {
       await newDb.execute('PRAGMA integrity_check');
       await newDb.close();
 
-      // 9. Clean up backup file after successful restore
-      final backupFile = File(backupPath);
-      if (await backupFile.exists()) {
-        await backupFile.delete();
-      }
+      // Keep the pre-restore database as a recoverable local copy.
+      await cleanupOldBackups();
 
       // 10. Log restore (audit trail)
       debugPrint('Database restored at ${DateTime.now()}. Size: $fileSize bytes');

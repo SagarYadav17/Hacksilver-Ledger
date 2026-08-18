@@ -7,6 +7,7 @@ import '../providers/category_provider.dart';
 import '../providers/currency_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../models/category.dart';
+import '../utils/amount_colors.dart';
 import '../utils/icon_utils.dart';
 
 class CategoryListScreen extends StatelessWidget {
@@ -79,19 +80,63 @@ class CategoryList extends StatelessWidget {
           return const Center(child: Text('No categories found.'));
         }
 
+        final semanticColor = type == CategoryType.expense
+            ? expenseColor(Theme.of(context).colorScheme)
+            : incomeColor(Theme.of(context).colorScheme);
+
         return ListView(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text('This month · drag to reorder'),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: semanticColor.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    type == CategoryType.expense
+                        ? 'THIS MONTH\'S SPENDING'
+                        : 'THIS MONTH\'S INCOME',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: semanticColor,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    formatter.format(totalAmount),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: semanticColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${active.length} active ${active.length == 1 ? 'category' : 'categories'} · drag to reorder',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 20),
+            Text(
+              'CATEGORIES',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.7,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
             ReorderableListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: active.length,
-              onReorder: (oldIndex, newIndex) {
-                if (newIndex > oldIndex) newIndex -= 1;
+              onReorderItem: (oldIndex, newIndex) {
                 final reordered = List<Category>.from(active);
                 final moved = reordered.removeAt(oldIndex);
                 reordered.insert(newIndex, moved);
@@ -105,42 +150,49 @@ class CategoryList extends StatelessWidget {
                   transactions: transactions,
                   totalAmount: totalAmount,
                   formatter: formatter,
-                  otherCategories: active
-                      .where((c) => c.id != cat.id)
-                      .toList(),
+                  otherCategories: active.where((c) => c.id != cat.id).toList(),
                 );
               },
             ),
             if (archived.isNotEmpty) ...[
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 20, 16, 4),
-                child: Text('Archived'),
+              Padding(
+                padding: const EdgeInsets.only(top: 20, bottom: 8),
+                child: Text(
+                  'ARCHIVED',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.7,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ),
               for (final cat in archived)
                 Opacity(
                   opacity: 0.55,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Color(
-                        cat.colorValue,
-                      ).withValues(alpha: 0.2),
-                      child: Icon(
-                        categoryIconData(
-                          cat.iconCode,
-                          fontFamily: cat.fontFamily,
-                          fontPackage: cat.fontPackage,
+                  child: Card(
+                    elevation: 0,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Color(
+                          cat.colorValue,
+                        ).withValues(alpha: 0.2),
+                        child: Icon(
+                          categoryIconData(
+                            cat.iconCode,
+                            fontFamily: cat.fontFamily,
+                            fontPackage: cat.fontPackage,
+                          ),
+                          color: Color(cat.colorValue),
                         ),
-                        color: Color(cat.colorValue),
                       ),
-                    ),
-                    title: Text('${cat.name} — archived'),
-                    subtitle: const Text(
-                      'Hidden from pickers, history kept',
-                    ),
-                    trailing: TextButton(
-                      onPressed: () =>
-                          categoryProvider.unarchiveCategory(cat.id!),
-                      child: const Text('Unarchive'),
+                      title: Text('${cat.name} — archived'),
+                      subtitle: const Text('Hidden from pickers, history kept'),
+                      trailing: TextButton(
+                        onPressed: () =>
+                            categoryProvider.unarchiveCategory(cat.id!),
+                        child: const Text('Unarchive'),
+                      ),
                     ),
                   ),
                 ),
@@ -183,30 +235,53 @@ class _CategoryRow extends StatelessWidget {
     final categoryColor = Color(cat.colorValue);
     final categoryProvider = context.read<CategoryProvider>();
 
-    return ListTile(
-      leading: const Icon(Icons.drag_indicator),
-      title: Row(
-        children: [
-          CircleAvatar(
-            radius: 19,
-            backgroundColor: categoryColor.withValues(alpha: 0.2),
-            child: Icon(
-              categoryIconData(
-                cat.iconCode,
-                fontFamily: cat.fontFamily,
-                fontPackage: cat.fontPackage,
-              ),
-              color: categoryColor,
-              size: 20,
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.drag_indicator,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Text(cat.name)),
-        ],
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(left: 50),
-        child: Column(
+            const SizedBox(width: 4),
+            CircleAvatar(
+              radius: 19,
+              backgroundColor: categoryColor.withValues(alpha: 0.2),
+              child: Icon(
+                categoryIconData(
+                  cat.iconCode,
+                  fontFamily: cat.fontFamily,
+                  fontPackage: cat.fontPackage,
+                ),
+                color: categoryColor,
+                size: 20,
+              ),
+            ),
+          ],
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                cat.name,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (usageAmount > 0)
+              Text(
+                formatter.format(usageAmount),
+                style: TextStyle(
+                  color: categoryColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+          ],
+        ),
+        subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -227,35 +302,35 @@ class _CategoryRow extends StatelessWidget {
               ),
           ],
         ),
-      ),
-      trailing: PopupMenuButton<String>(
-        onSelected: (action) {
-          switch (action) {
-            case 'edit':
-              showDialog(
-                context: context,
-                builder: (ctx) => AddCategoryDialog(existing: cat),
-              );
-              break;
-            case 'merge':
-              _showMergeDialog(context, categoryProvider);
-              break;
-            case 'archive':
-              categoryProvider.archiveCategory(cat.id!);
-              break;
-            case 'delete':
-              _confirmDelete(context, categoryProvider);
-              break;
-          }
-        },
-        itemBuilder: (ctx) => [
-          const PopupMenuItem(value: 'edit', child: Text('Edit')),
-          if (otherCategories.isNotEmpty)
-            const PopupMenuItem(value: 'merge', child: Text('Merge into…')),
-          const PopupMenuItem(value: 'archive', child: Text('Archive')),
-          if (cat.isCustom)
-            const PopupMenuItem(value: 'delete', child: Text('Delete')),
-        ],
+        trailing: PopupMenuButton<String>(
+          onSelected: (action) {
+            switch (action) {
+              case 'edit':
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AddCategoryDialog(existing: cat),
+                );
+                break;
+              case 'merge':
+                _showMergeDialog(context, categoryProvider);
+                break;
+              case 'archive':
+                categoryProvider.archiveCategory(cat.id!);
+                break;
+              case 'delete':
+                _confirmDelete(context, categoryProvider);
+                break;
+            }
+          },
+          itemBuilder: (ctx) => [
+            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+            if (otherCategories.isNotEmpty)
+              const PopupMenuItem(value: 'merge', child: Text('Merge into…')),
+            const PopupMenuItem(value: 'archive', child: Text('Archive')),
+            if (cat.isCustom)
+              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+          ],
+        ),
       ),
     );
   }

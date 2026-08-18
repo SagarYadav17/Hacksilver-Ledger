@@ -76,7 +76,7 @@ class AccountListScreen extends StatelessWidget {
             children: [
               Card(
                 elevation: 0,
-                color: colorScheme.primary,
+                color: availableColor(colorScheme),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -92,18 +92,18 @@ class AccountListScreen extends StatelessWidget {
                               'Total balance',
                               style: Theme.of(context).textTheme.labelLarge
                                   ?.copyWith(
-                                    color: colorScheme.onPrimary.withValues(
-                                      alpha: 0.72,
-                                    ),
+                                    color: _onFinancialColor(
+                                      colorScheme,
+                                    ).withValues(alpha: 0.72),
                                     letterSpacing: 0.4,
                                   ),
                             ),
                           ),
                           Icon(
                             Icons.account_balance_wallet_outlined,
-                            color: colorScheme.onPrimary.withValues(
-                              alpha: 0.78,
-                            ),
+                            color: _onFinancialColor(
+                              colorScheme,
+                            ).withValues(alpha: 0.78),
                           ),
                         ],
                       ),
@@ -117,7 +117,7 @@ class AccountListScreen extends StatelessWidget {
                           ),
                           style: Theme.of(context).textTheme.displayMedium
                               ?.copyWith(
-                                color: colorScheme.onPrimary,
+                                color: _onFinancialColor(colorScheme),
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -1,
                               ),
@@ -129,10 +129,10 @@ class AccountListScreen extends StatelessWidget {
                         icon: const Icon(Icons.swap_horiz_rounded),
                         label: const Text('Move money'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: colorScheme.onPrimary.withValues(
-                            alpha: 0.14,
-                          ),
-                          foregroundColor: colorScheme.onPrimary,
+                          backgroundColor: _onFinancialColor(
+                            colorScheme,
+                          ).withValues(alpha: 0.14),
+                          foregroundColor: _onFinancialColor(colorScheme),
                         ),
                       ),
                     ],
@@ -221,12 +221,14 @@ class AccountListScreen extends StatelessWidget {
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: colorScheme.primaryContainer,
+                                  color: groupingColor(
+                                    colorScheme,
+                                  ).withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Icon(
                                   _getIconForType(account.type),
-                                  color: colorScheme.onPrimaryContainer,
+                                  color: groupingColor(colorScheme),
                                 ),
                               ),
                               const SizedBox(width: 14),
@@ -317,19 +319,23 @@ class AccountListScreen extends StatelessWidget {
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const AddTransactionScreen(
-          initialType: CategoryType.transfer,
-        ),
+        builder: (_) =>
+            const AddTransactionScreen(initialType: CategoryType.transfer),
       ),
     );
   }
 
   List<double> _recentDeltas(TransactionProvider txProvider, int? accountId) {
     if (accountId == null) return const [];
-    final related = txProvider.transactions
-        .where((tx) => tx.accountId == accountId || tx.transferAccountId == accountId)
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+    final related =
+        txProvider.transactions
+            .where(
+              (tx) =>
+                  tx.accountId == accountId ||
+                  tx.transferAccountId == accountId,
+            )
+            .toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
 
     final recent = related.take(4).toList().reversed;
     return [
@@ -373,6 +379,9 @@ class AccountListScreen extends StatelessWidget {
     if (balance >= 0) return incomeColor(colorScheme);
     return expenseColor(colorScheme);
   }
+
+  Color _onFinancialColor(ColorScheme colorScheme) =>
+      colorScheme.brightness == Brightness.dark ? Colors.black : Colors.white;
 
   String _getCurrencySymbol(String currencyCode) {
     switch (currencyCode) {

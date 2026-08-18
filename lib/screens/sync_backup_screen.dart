@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/sync_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/backup_service.dart';
+import '../utils/amount_colors.dart';
 import 'auth_screen.dart';
 
 class SyncBackupScreen extends StatelessWidget {
@@ -18,8 +19,45 @@ class SyncBackupScreen extends StatelessWidget {
         builder: (context, syncProvider, authProvider, child) {
           final loggedIn = authProvider.isLoggedIn;
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: groupingColor(colorScheme).withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.shield_outlined,
+                      size: 30,
+                      color: groupingColor(colorScheme),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Your ledger, your control',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Your phone stays the source of truth.',
+                            style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
               _sectionLabel(context, 'WHERE YOUR DATA LIVES'),
               const SizedBox(height: 12),
               _ModeCard(
@@ -73,7 +111,7 @@ class SyncBackupScreen extends StatelessWidget {
                       ListTile(
                         leading: Icon(
                           Icons.cloud_done_outlined,
-                          color: colorScheme.primary,
+                          color: availableColor(colorScheme),
                         ),
                         title: Text(
                           syncProvider.pendingCount > 0
@@ -168,7 +206,7 @@ class SyncBackupScreen extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.download_outlined),
-                      label: const Text('Export file'),
+                      label: const Text('Export'),
                       onPressed: () async {
                         await BackupService().exportDatabase(context);
                       },
@@ -178,17 +216,36 @@ class SyncBackupScreen extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.upload_outlined),
-                      label: const Text('Restore…'),
+                      label: const Text('Restore'),
                       onPressed: () => _showRestoreDialog(context),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                'Restore always asks before replacing data on this device.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Restore always asks before replacing data on this device.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -238,7 +295,8 @@ class SyncBackupScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Restore database'),
         content: const Text(
-          'This will overwrite your current data. Are you sure?',
+          'This will replace data on this device. A recovery copy of your '
+          'current database will be kept locally.',
         ),
         actions: [
           TextButton(
@@ -250,7 +308,7 @@ class SyncBackupScreen extends StatelessWidget {
               Navigator.pop(ctx);
               await BackupService().restoreDatabase(context);
             },
-            child: const Text('Restore'),
+            child: const Text('Restore and replace'),
           ),
         ],
       ),
@@ -270,7 +328,9 @@ class SyncBackupScreen extends StatelessWidget {
               ? 'Sync complete! ${result.syncedCount} items uploaded.'
               : result.errorMessage ?? 'Sync failed',
         ),
-        backgroundColor: result.success ? Colors.green : Colors.red,
+        backgroundColor: result.success
+            ? availableColor(Theme.of(context).colorScheme)
+            : expenseColor(Theme.of(context).colorScheme),
       ),
     );
   }
@@ -335,7 +395,9 @@ class _ModeCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+          color: selected
+              ? groupingColor(colorScheme)
+              : colorScheme.outlineVariant,
           width: selected ? 2 : 1,
         ),
       ),
@@ -349,7 +411,7 @@ class _ModeCard extends StatelessWidget {
               Icon(
                 icon,
                 color: selected
-                    ? colorScheme.primary
+                    ? groupingColor(colorScheme)
                     : colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),

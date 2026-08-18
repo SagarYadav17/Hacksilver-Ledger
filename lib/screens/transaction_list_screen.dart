@@ -21,9 +21,17 @@ class TransactionListScreen extends StatefulWidget {
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
+  final _searchController = TextEditingController();
   CategoryType? _filterType;
   DateTimeRange? _dateRange;
   String _searchQuery = '';
+  _TransactionSort _sort = _TransactionSort.newest;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _showFilterSheet() {
     CategoryType? tempType = _filterType;
@@ -145,8 +153,22 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transactions'),
+        title: const Text('Activity'),
         actions: [
+          PopupMenuButton<_TransactionSort>(
+            tooltip: 'Sort transactions',
+            icon: const Icon(Icons.sort),
+            initialValue: _sort,
+            onSelected: (sort) => setState(() => _sort = sort),
+            itemBuilder: (context) => [
+              for (final sort in _TransactionSort.values)
+                CheckedPopupMenuItem(
+                  value: sort,
+                  checked: _sort == sort,
+                  child: Text(sort.label),
+                ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list_alt),
             onPressed: _showFilterSheet,
@@ -156,7 +178,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       bottomNavigationBar: const AppBottomNav(currentRoute: '/transactions'),
       body: Consumer<TransactionProvider>(
         builder: (context, provider, child) {
-          var txs = provider.transactions;
+          var txs = List<model.Transaction>.from(provider.transactions);
           final categories = Provider.of<CategoryProvider>(
             context,
             listen: false,
@@ -193,17 +215,32 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   category.name.toLowerCase().contains(query);
             }).toList();
           }
+          txs.sort(
+            (a, b) => _sort == _TransactionSort.newest
+                ? b.date.compareTo(a.date)
+                : a.date.compareTo(b.date),
+          );
           final groups = _groupByDay(txs);
 
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: TextField(
-                  decoration: const InputDecoration(
+                  controller: _searchController,
+                  decoration: InputDecoration(
                     prefixIcon: Icon(Icons.search),
-                    hintText: 'Search title, notes, or category',
-                    border: OutlineInputBorder(),
+                    hintText: 'Search activity',
+                    suffixIcon: _searchQuery.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Clear search',
+                            icon: const Icon(Icons.close),
+                            onPressed: () => setState(() {
+                              _searchController.clear();
+                              _searchQuery = '';
+                            }),
+                          ),
                   ),
                   textInputAction: TextInputAction.search,
                   onChanged: (value) {
@@ -297,7 +334,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                           .textTheme
                                           .labelSmall
                                           ?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
+                                            color: group.total < 0
+                                                ? expenseColor(colorScheme)
+                                                : group.total > 0
+                                                ? incomeColor(colorScheme)
+                                                : colorScheme.onSurfaceVariant,
                                             fontWeight: FontWeight.w600,
                                           ),
                                     ),
@@ -309,8 +350,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                 margin: const EdgeInsets.symmetric(
                                   horizontal: 4,
                                 ),
+                                color: colorScheme.surfaceContainerLow,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(20),
                                   side: BorderSide(
                                     color: colorScheme.outlineVariant
                                         .withValues(alpha: 0.5),
@@ -332,17 +374,21 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                           categories,
                                         ),
                                         formatter: formatter,
-                                        onTap: () => showTransactionDetailsSheet(
-                                          context,
-                                          transaction: group.transactions[i],
-                                          category: _categoryFor(
-                                            group.transactions[i].categoryId,
-                                            categories,
-                                          ),
-                                          accounts: accounts,
-                                          formatter: formatter,
-                                          provider: provider,
-                                        ),
+                                        onTap: () =>
+                                            showTransactionDetailsSheet(
+                                              context,
+                                              transaction:
+                                                  group.transactions[i],
+                                              category: _categoryFor(
+                                                group
+                                                    .transactions[i]
+                                                    .categoryId,
+                                                categories,
+                                              ),
+                                              accounts: accounts,
+                                              formatter: formatter,
+                                              provider: provider,
+                                            ),
                                         onDelete: () async {
                                           final shouldDelete =
                                               await _confirmDelete(context);
@@ -465,6 +511,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 }
 
+enum _TransactionSort {
+  newest('Newest first'),
+  oldest('Oldest first');
+
+  const _TransactionSort(this.label);
+  final String label;
+}
+
 class _TransactionDayGroup {
   final DateTime day;
   final List<model.Transaction> transactions;
@@ -517,7 +571,9 @@ class _TransactionRow extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: categoryColor.withValues(alpha: 0.15),
+            color: transaction.type == CategoryType.transfer
+                ? transferColor(colorScheme).withValues(alpha: 0.14)
+                : categoryColor.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -526,7 +582,9 @@ class _TransactionRow extends StatelessWidget {
               fontFamily: category.fontFamily,
               fontPackage: category.fontPackage,
             ),
-            color: categoryColor,
+            color: transaction.type == CategoryType.transfer
+                ? transferColor(colorScheme)
+                : categoryColor,
             size: 22,
           ),
         ),

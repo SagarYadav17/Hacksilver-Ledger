@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/sync_provider.dart';
+import '../utils/amount_colors.dart';
 
 // ponytail: diagnostics = sync history/error surface, no persisted app-wide error log yet.
 class DiagnosticsScreen extends StatelessWidget {
@@ -18,14 +19,26 @@ class DiagnosticsScreen extends StatelessWidget {
         children: [
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: ListTile(
               leading: Icon(
-                syncProvider.lastError != null ? Icons.error_outline : Icons.check_circle_outline,
-                color: syncProvider.lastError != null ? colorScheme.error : colorScheme.primary,
+                syncProvider.lastError != null
+                    ? Icons.error_outline
+                    : Icons.check_circle_outline,
+                color: syncProvider.lastError != null
+                    ? expenseColor(colorScheme)
+                    : incomeColor(colorScheme),
               ),
-              title: Text(syncProvider.lastError != null ? 'Last sync error' : 'No active errors'),
-              subtitle: Text(syncProvider.lastError ?? 'Everything looks fine.'),
+              title: Text(
+                syncProvider.lastError != null
+                    ? 'Last sync error'
+                    : 'No active errors',
+              ),
+              subtitle: Text(
+                syncProvider.lastError ?? 'Everything looks fine.',
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -49,18 +62,26 @@ class DiagnosticsScreen extends StatelessWidget {
           else
             Card(
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Column(
                 children: [
                   for (final item in syncProvider.syncHistory)
                     ListTile(
                       dense: true,
                       leading: Icon(
-                        item['status'] == 'success' ? Icons.check_circle_outline : Icons.error_outline,
-                        color: item['status'] == 'success' ? colorScheme.primary : colorScheme.error,
+                        item['status'] == 'success'
+                            ? Icons.check_circle_outline
+                            : Icons.error_outline,
+                        color: item['status'] == 'success'
+                            ? incomeColor(colorScheme)
+                            : expenseColor(colorScheme),
                       ),
                       title: Text('${item['createdAt']}'),
-                      subtitle: Text('${item['status']} · ${item['syncedCount']} rows${item['message'] != null ? ' · ${item['message']}' : ''}'),
+                      subtitle: Text(
+                        '${item['status']} · ${item['syncedCount']} rows${item['message'] != null ? ' · ${item['message']}' : ''}',
+                      ),
                     ),
                 ],
               ),

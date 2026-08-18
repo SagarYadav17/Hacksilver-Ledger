@@ -6,6 +6,7 @@ import '../providers/account_provider.dart';
 import '../providers/currency_provider.dart';
 import '../providers/security_provider.dart';
 import '../models/category.dart';
+import '../utils/amount_colors.dart';
 
 class SummaryCard extends StatelessWidget {
   const SummaryCard({super.key});
@@ -74,7 +75,7 @@ class SummaryCard extends StatelessWidget {
         return Card(
           elevation: 0,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: colorScheme.primary,
+          color: colorScheme.surfaceContainerLow,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
@@ -94,9 +95,8 @@ class SummaryCard extends StatelessWidget {
                             'Available Balance',
                             style: Theme.of(context).textTheme.labelLarge
                                 ?.copyWith(
-                                  color: colorScheme.onPrimary.withValues(
-                                    alpha: 0.72,
-                                  ),
+                                  color: colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.72),
                                   letterSpacing: 0.5,
                                 ),
                           ),
@@ -111,7 +111,7 @@ class SummaryCard extends StatelessWidget {
                               style: Theme.of(context).textTheme.displayLarge
                                   ?.copyWith(
                                     fontWeight: FontWeight.w900,
-                                    color: colorScheme.onPrimary,
+                                    color: availableColor(colorScheme),
                                     letterSpacing: -1,
                                   ),
                             ),
@@ -124,12 +124,14 @@ class SummaryCard extends StatelessWidget {
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: colorScheme.onPrimary.withValues(alpha: 0.12),
+                        color: availableColor(
+                          colorScheme,
+                        ).withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         Icons.wallet_outlined,
-                        color: colorScheme.onPrimary.withValues(alpha: 0.78),
+                        color: availableColor(colorScheme),
                         size: 28,
                       ),
                     ),
@@ -137,10 +139,7 @@ class SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 // Divider
-                Container(
-                  height: 1,
-                  color: colorScheme.onPrimary.withValues(alpha: 0.16),
-                ),
+                Container(height: 1, color: colorScheme.outlineVariant),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -150,7 +149,7 @@ class SummaryCard extends StatelessWidget {
                       label: 'Income',
                       amount: currentMonthIncome,
                       icon: Icons.trending_up_rounded,
-                      color: colorScheme.tertiary,
+                      color: incomeColor(colorScheme),
                       formatter: formatter,
                       change: incomeChange.toStringAsFixed(0),
                       isPositive: incomeChange >= 0,
@@ -158,14 +157,14 @@ class SummaryCard extends StatelessWidget {
                     Container(
                       height: 60,
                       width: 1,
-                      color: colorScheme.onPrimary.withValues(alpha: 0.16),
+                      color: colorScheme.outlineVariant,
                     ),
                     _buildStat(
                       context: context,
                       label: 'Expense',
                       amount: currentMonthExpense,
                       icon: Icons.trending_down_rounded,
-                      color: colorScheme.error,
+                      color: expenseColor(colorScheme),
                       formatter: formatter,
                       change: null,
                       isPositive: true,
@@ -206,18 +205,18 @@ class SummaryCard extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(
-              context,
-            ).colorScheme.onPrimary.withValues(alpha: 0.65),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             letterSpacing: 0.3,
           ),
         ),
         const SizedBox(height: 6),
         Text(
-          context.watch<SecurityProvider>().maskAmount(formatter.format(amount)),
+          context.watch<SecurityProvider>().maskAmount(
+            formatter.format(amount),
+          ),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         if (change != null) ...[
@@ -230,16 +229,16 @@ class SummaryCard extends StatelessWidget {
                     : Icons.arrow_downward_rounded,
                 size: 14,
                 color: isPositive
-                    ? Theme.of(context).colorScheme.tertiary
-                    : Theme.of(context).colorScheme.error,
+                    ? incomeColor(Theme.of(context).colorScheme)
+                    : expenseColor(Theme.of(context).colorScheme),
               ),
               const SizedBox(width: 4),
               Text(
                 '${isPositive ? '+' : ''}$change%',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: isPositive
-                      ? Theme.of(context).colorScheme.tertiary
-                      : Theme.of(context).colorScheme.error,
+                      ? incomeColor(Theme.of(context).colorScheme)
+                      : expenseColor(Theme.of(context).colorScheme),
                   fontWeight: FontWeight.w600,
                 ),
               ),

@@ -64,7 +64,7 @@ class DashboardScreen extends StatelessWidget {
                     _QuickActionButton(
                       label: 'Expense',
                       icon: Icons.arrow_downward_rounded,
-                      color: colorScheme.error,
+                      color: expenseColor(colorScheme),
                       onTap: () =>
                           _openAddTransaction(context, CategoryType.expense),
                     ),
@@ -72,7 +72,7 @@ class DashboardScreen extends StatelessWidget {
                     _QuickActionButton(
                       label: 'Income',
                       icon: Icons.arrow_upward_rounded,
-                      color: colorScheme.tertiary,
+                      color: incomeColor(colorScheme),
                       onTap: () =>
                           _openAddTransaction(context, CategoryType.income),
                     ),
@@ -80,7 +80,7 @@ class DashboardScreen extends StatelessWidget {
                     _QuickActionButton(
                       label: 'Transfer',
                       icon: Icons.swap_horiz_rounded,
-                      color: colorScheme.primary,
+                      color: groupingColor(colorScheme),
                       onTap: () =>
                           _openAddTransaction(context, CategoryType.transfer),
                     ),
@@ -88,7 +88,7 @@ class DashboardScreen extends StatelessWidget {
                     _QuickActionButton(
                       label: 'EMI',
                       icon: Icons.calendar_month_rounded,
-                      color: colorScheme.secondary,
+                      color: plannedColor(colorScheme),
                       onTap: () => _openQuickAction(context, '/loans'),
                     ),
                   ],
@@ -600,13 +600,13 @@ class _CashflowCard extends StatelessWidget {
                                   toY: buckets[i].income,
                                   width: 9,
                                   borderRadius: BorderRadius.circular(4),
-                                  color: colorScheme.primary,
+                                  color: incomeColor(colorScheme),
                                 ),
                                 BarChartRodData(
                                   toY: buckets[i].expense,
                                   width: 9,
                                   borderRadius: BorderRadius.circular(4),
-                                  color: colorScheme.outlineVariant,
+                                  color: expenseColor(colorScheme),
                                 ),
                               ],
                             ),
@@ -618,11 +618,14 @@ class _CashflowCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _LegendDot(label: 'Income', color: colorScheme.primary),
+                      _LegendDot(
+                        label: 'Income',
+                        color: incomeColor(colorScheme),
+                      ),
                       const SizedBox(width: 16),
                       _LegendDot(
                         label: 'Expense',
-                        color: colorScheme.outlineVariant,
+                        color: expenseColor(colorScheme),
                       ),
                     ],
                   ),

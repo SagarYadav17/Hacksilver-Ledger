@@ -32,9 +32,9 @@ class AccountSummary extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
               child: Text(
                 'Your Accounts',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             SizedBox(
@@ -78,13 +78,15 @@ class AccountSummary extends StatelessWidget {
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: colorScheme.primaryContainer,
+                                      color: groupingColor(
+                                        colorScheme,
+                                      ).withValues(alpha: 0.14),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Icon(
                                       _getIconForType(account.type),
                                       size: 22,
-                                      color: colorScheme.onPrimaryContainer,
+                                      color: groupingColor(colorScheme),
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -94,9 +96,7 @@ class AccountSummary extends StatelessWidget {
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        ?.copyWith(fontWeight: FontWeight.w500),
                                   ),
                                 ],
                               ),
@@ -104,9 +104,7 @@ class AccountSummary extends StatelessWidget {
                                 securityProvider.maskAmount(
                                   formatter.format(account.balance),
                                 ),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
                                       color: _getBalanceColor(
                                         colorScheme,
