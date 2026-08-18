@@ -6,3 +6,4 @@
 - [x] Remove drawer from root screens.
 - [x] Turn Settings into fuller More hub with links to Categories, Recurring, Sync, Backup, and Preferences.
 - [x] Keep legacy drawer only on deep/secondary screens until they move under More.
+- [x] Apply neutral grouped settings surfaces and semantic sync/category colors.

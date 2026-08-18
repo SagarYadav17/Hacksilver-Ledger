@@ -8,3 +8,4 @@
 - [x] Add recurring pause/resume after schema update.
 - [x] Add sync history after persistence model exists.
 - [x] Add app lock/hide balance after security state exists.
+- [x] Apply shared semantic palette across accounts, loans, categories, recurring, sync, and backup flows.

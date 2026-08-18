@@ -7,3 +7,4 @@
 - [x] Show per-day totals.
 - [x] Add transaction details bottom sheet.
 - [x] Keep edit/delete flows.
+- [x] Add newest/oldest sort and neutral day-card hierarchy.
