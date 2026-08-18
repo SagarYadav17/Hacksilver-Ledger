@@ -1,0 +1,30 @@
+[tools]
+java = "21"
+
+[env]
+ANDROID_HOME = "{{ env.HOME }}/Android/Sdk"
+ANDROID_SDK_ROOT = "{{ env.ANDROID_HOME }}"
+_.path = [
+  "{{ env.ANDROID_HOME }}/emulator",
+  "{{ env.ANDROID_HOME }}/platform-tools",
+]
+
+[tasks.setup]
+description = "Install Flutter dependencies"
+run = "flutter pub get"
+
+[tasks.run]
+description = "Run the app locally"
+run = "flutter run"
+
+[tasks.analyze]
+description = "Run Flutter static analysis"
+run = "flutter analyze"
+
+[tasks.test]
+description = "Run Flutter tests"
+run = "flutter test"
+
+[tasks.build]
+description = "Build the Android release bundle"
+run = "flutter build appbundle --release"
