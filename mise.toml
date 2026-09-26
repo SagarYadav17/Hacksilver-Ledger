@@ -9,22 +9,30 @@ _.path = [
   "{{ env.ANDROID_HOME }}/platform-tools",
 ]
 
-[tasks.setup]
-description = "Install Flutter dependencies"
-run = "flutter pub get"
+[tasks.install]
+description = "Install JavaScript dependencies"
+run = "bun install"
 
-[tasks.run]
-description = "Run the app locally"
-run = "flutter run"
+[tasks.start]
+description = "Start the Expo development server"
+run = "bun run start"
 
-[tasks.analyze]
-description = "Run Flutter static analysis"
-run = "flutter analyze"
+[tasks.typecheck]
+description = "Run TypeScript checks"
+run = "bun run typecheck"
 
 [tasks.test]
-description = "Run Flutter tests"
-run = "flutter test"
+description = "Run the Bun test suite"
+run = "bun test"
 
-[tasks.build]
-description = "Build the Android release bundle"
-run = "flutter build appbundle --release"
+[tasks.lint]
+description = "Run Oxlint"
+run = "bun run lint"
+
+[tasks.format]
+description = "Check Oxfmt formatting"
+run = "bun run format:check"
+
+[tasks.android]
+description = "Build and run the Android app"
+run = "bun run android"

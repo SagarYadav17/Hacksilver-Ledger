@@ -92,6 +92,9 @@ old remote rows created with numeric relation fields.
 
 ## 5. Sync behavior
 
-Manual sync uploads local changes. The release target adds two-way pull,
-newest-UTC-change wins conflict handling, tombstones, sync history, and
-background retry. Until that lands, cloud copy remains upload-only.
+The active React Native client performs manual two-way sync in dependency order:
+categories, accounts, loans, recurring transactions, then transactions. It
+retains tombstones, uses newest-UTC-change-wins semantics, records local-wins
+conflicts in `sync_conflicts`, and registers best-effort background retry where
+the operating system permits it. The server remains optional and local SQLite
+continues to be the source of truth.

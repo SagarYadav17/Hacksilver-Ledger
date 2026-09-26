@@ -1,0 +1,11 @@
+# Generated platform icon/launch-image duplicates do not add architectural
+# relationships and overwhelm local semantic extraction.
+android/app/src/main/res/**/*.png
+ios/Runner/Assets.xcassets/**/*.png
+macos/Runner/Assets.xcassets/**/*.png
+web/icons/*.png
+web/favicon.png
+
+# Large design-handoff export is not application source and is not reliably
+# emitted as Graphify JSON by local semantic models.
+design_handoff_hacksilver_redesign/*.html

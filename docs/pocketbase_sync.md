@@ -1,7 +1,7 @@
 # PocketBase sync reference
 
 Hacksilver Ledger uses optional self-hosted PocketBase sync. SQLite remains
-the offline source of truth; the mobile app never receives a PocketBase admin
+the offline source of truth; the app never receives a PocketBase admin
 credential.
 
 Create these Base collections: `categories`, `accounts`, `loans`,

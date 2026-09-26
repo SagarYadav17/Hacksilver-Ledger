@@ -6,5 +6,5 @@
 - [x] Add category grid.
 - [x] Add account/date/note controls.
 - [x] Add recent/template chips using local recent transactions.
-- [x] Save through existing `TransactionProvider`.
+- [x] Save through the existing transaction repository hook.
 - [x] Use type-aware amount hero and semantic save states.

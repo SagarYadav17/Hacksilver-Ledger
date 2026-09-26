@@ -1,84 +1,83 @@
 # Privacy Policy for Hacksilver Ledger
 
-Effective date: 15 March 2026
+Effective date: 26 September 2026
 
-Hacksilver Ledger ("the app") is a personal finance app designed for local-first usage. This Privacy Policy explains how data is handled when you use the app.
+Hacksilver Ledger ("the app") is a personal finance app designed for local-first use. This policy explains what information the app stores, how it is used, and when it may leave your device.
 
-## 1. Data We Collect
+## 1. Information the App Handles
 
-By default, the app does not require account registration and does not collect personal data on a central server.
+You do not need to register to use the app's local features. The app stores the information you enter, which may include:
 
-The app stores financial records you enter, such as:
-
-- Accounts and balances
-- Transactions (income, expense, transfer)
+- Account names, types, and balances
+- Transaction titles, amounts, dates, types, notes, and account/category links
 - Categories
-- Recurring transactions
-- Loan and EMI details
-- App preferences (theme, currency, etc.)
+- Recurring transaction amounts, schedules, notes, and account/category links
+- Loan amounts, interest rates, repayment details, notes, and payment history
+- App preferences, such as currency and whether balances are hidden
 
-This data is stored locally on your device using SQLite.
+Ledger records are stored in a local SQLite database on your device. App preferences, your optional app-lock PIN hash, and optional PocketBase connection/session information are stored using the device's secure storage facility.
 
-## 2. How Your Data Is Used
+If a sync conflict occurs, the app may store local and remote record snapshots in its local sync-conflict history to support conflict handling.
 
-Your data is used only to provide app features, including:
+## 2. How Information Is Used
 
-- Displaying summaries and reports
-- Managing transactions, loans, and recurring entries
-- Applying your selected app settings
-- Creating or restoring backups when you explicitly choose to do so
+Information is used to provide app features, including summaries and reports, managing your ledger, applying your preferences, and creating or restoring backups.
 
-## 3. Data Sharing and Disclosure
+Cloud sync is optional. If you configure a PocketBase server and sign in, the app sends the ledger records needed for sync to that server. This includes account balances; transaction, loan, recurring-entry, and category details; notes; dates; and links between records. The app also sends your email address and password to the configured server when you create an account or sign in. The app stores the resulting session information on your device; it does not use your PocketBase password as a ledger field.
 
-The app does not sell your data.
+After you sign in, you can sync manually. The app may also sync when a network connection becomes available and through operating-system background tasks. Background execution is best-effort and depends on the device and operating system.
 
-Data is shared only when you explicitly initiate actions such as:
+## 3. Sharing and Disclosure
 
-- Export/backup via Android share sheet
-- Selecting a backup file for restore
+The app does not sell your information. The app does not automatically send your financial records to the developer.
 
-The app does not automatically transmit your financial records to the developer.
+If you enable sync, your information is sent to the PocketBase server URL you configure. That server may be self-hosted or operated by someone else. Its operator and hosting provider may be able to access server data and logs under their control. You are responsible for choosing a server you trust and reviewing its privacy and retention practices.
 
-## 4. Permissions and Device Access
+When you export a backup, the app creates a JSON file containing your ledger records and opens the device's share sheet. Any app, person, or storage service you choose there may receive a copy. The app does not control copies made or retained by those destinations.
 
-Depending on platform behavior, the app may access:
+When you restore, you choose a backup file through the device's file picker. The app reads that file to replace the local ledger data. The app does not send the selected file to the developer as part of the restore operation.
 
-- File picker/storage locations to import a backup file
-- Share sheet to export a backup file
+## 4. Permissions and Device Features
 
-These actions occur only when triggered by you.
+The app may use:
+
+- Network access for optional PocketBase account access and sync
+- Background-task scheduling for best-effort sync after you have configured and signed in to a server
+- The system file picker to select a backup for restore
+- The system share sheet to export a backup
+- Notifications, if you request a loan reminder and grant notification permission
+
+Loan reminder notifications include the loan title and that a payment is due tomorrow. Depending on your device settings, notification content may appear on the lock screen.
 
 ## 5. Third-Party Services and Libraries
 
-The app uses third-party packages to provide functionality (for example file picking, sharing, and local storage). These libraries operate within your device context for app features.
+The app uses third-party software libraries for local storage, secure storage, file selection, sharing, networking, notifications, and optional PocketBase sync. The app's sync destination is the PocketBase server URL you enter. The app's current source does not include an analytics or crash-reporting service integration.
 
-At this stage, no mandatory cloud sync is enabled by default.
+The app does not require a cloud account for local use. Optional sync depends on the PocketBase server you choose; the server operator's practices are governed by that operator's policies and configuration.
 
-## 6. Data Security
+## 6. Security
 
-Data is primarily stored on your device. You are responsible for device-level security (screen lock, encryption, secure backup destination).
+Ledger records are stored in the app's local SQLite database. The app uses the device's secure storage facility for selected preferences, the app-lock PIN hash, and PocketBase session information. The app-lock PIN is stored as a hash; it is a convenience feature and should not be treated as a substitute for your device's screen lock.
 
-## 7. Data Retention and Deletion
+Exported backups are JSON files and are not encrypted by the app. The share destination determines how shared copies are handled. Network protection for optional sync depends on the URL and security configuration of the PocketBase server you choose; use a trusted server configured for HTTPS.
 
-Your data remains on your device until you delete records in the app, clear app data, or uninstall the app.
+## 7. Retention and Deletion
 
-If you export backups, those files are stored in locations and services you choose.
+Local ledger data remains on your device until it is removed, app data is cleared, or the app is uninstalled. Some record deletions are represented by sync tombstones rather than immediate erasure. A tombstone can remain in the local database and be sent to your configured PocketBase server so the deletion can be synchronized with other devices.
 
-## 8. Children’s Privacy
+The app does not currently provide a control to erase your PocketBase account and all data stored on that server. Server-side copies, including sync tombstones, may remain until they are removed by the server operator. Contact the operator of your configured server about server-side deletion and retention. Copies of exported backups remain wherever you or a share destination stored them, subject to that destination's retention practices.
 
-The app is not specifically directed to children under 13. The app does not knowingly collect personal data from children.
+## 8. Children's Privacy
 
-## 9. Future Cloud Features
+The app is not designed for children under 13 and does not include age verification. If you believe a child has created an optional PocketBase account, contact the operator of the configured server about that account and its data.
 
-If optional cloud sync is introduced in future versions, this Privacy Policy will be updated before those features are generally enabled.
+## 9. Changes to This Policy
 
-## 10. Changes to This Policy
+This policy may be updated as the app changes. The effective date at the top of this document will be revised when the policy is updated.
 
-This policy may be updated from time to time. Updates will be reflected by changing the effective date at the top of this document.
+## 10. Contact
 
-## 11. Contact
-
-For privacy questions or requests, please contact the developer through the project repository:
+For privacy questions about the app, contact the developer through the project repository:
 
 - GitHub: https://github.com/SagarYadav17/Hacksilver-Ledger
 - Issues: https://github.com/SagarYadav17/Hacksilver-Ledger/issues

@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "ignorePatterns": ["node_modules/**", ".expo/**", "dist/**", "android/**", "ios/**", "App.tsx"],
+  "rules": {
+    "no-console": "warn",
+    "react/jsx-no-target-blank": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/no-unstable-nested-components": "off",
+    "react/set-state-in-effect": "off",
+    "react/preserve-manual-memoization": "off"
+  }
+}
