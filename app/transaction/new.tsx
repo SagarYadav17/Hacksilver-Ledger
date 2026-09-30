@@ -13,7 +13,13 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAccounts, useCategories, useCreateTransaction, useTransactions, useUpdateTransaction } from '@/data/hooks';
-import type { TransactionInput, TransactionType } from '@/domain/types';
+import {
+  SYSTEM_CATEGORY,
+  TRANSACTION_TYPES,
+  type Category,
+  type TransactionInput,
+  type TransactionType,
+} from '@/domain/types';
 import { radius, spacing, useAppTheme } from '@/lib/theme';
 import { Pill } from '@/components/ui';
 
@@ -47,16 +53,40 @@ export default function TransactionFormScreen() {
   }, [existing]);
 
   useEffect(() => {
+    if (type === 'adjustment') return;
     if (!categoryId && categories.data?.length) {
       setCategoryId(categories.data.find((item) => item.type === type)?.id ?? categories.data[0].id);
     }
     if (type !== 'transfer') setTransferAccountId(null);
   }, [categories.data, categoryId, type]);
 
+  const selectType = (value: TransactionType) => {
+    setType(value);
+    if (value === 'adjustment') {
+      setTransferAccountId(null);
+      setCategoryId(existing?.type === 'adjustment' ? existing.categoryId : '');
+      return;
+    }
+    setCategoryId(categories.data?.find((item) => item.type === value && !isAdjustmentCategory(item))?.id ?? '');
+    setAmount((current) => current.replace(/^-/, ''));
+  };
+
   const submit = () => {
     const numericAmount = Number(amount.replace(/,/g, ''));
-    if (!title.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0 || !categoryId) {
-      Alert.alert('Almost there', 'Add a title, a positive amount, and a category.');
+    const isAdjustment = type === 'adjustment';
+    if (!title.trim() || !Number.isFinite(numericAmount) || (isAdjustment ? numericAmount === 0 : numericAmount <= 0)) {
+      Alert.alert(
+        'Almost there',
+        isAdjustment ? 'Add a title and a non-zero amount.' : 'Add a title and a positive amount.',
+      );
+      return;
+    }
+    if (!isAdjustment && !categoryId) {
+      Alert.alert('Almost there', 'Choose a category.');
+      return;
+    }
+    if (isAdjustment && !accountId) {
+      Alert.alert('Choose an account', 'Adjustments change an account balance, so pick one.');
       return;
     }
     if (type === 'transfer' && (!accountId || !transferAccountId || accountId === transferAccountId)) {
@@ -87,7 +117,9 @@ export default function TransactionFormScreen() {
   };
 
   const availableCategories =
-    categories.data?.filter((item) => (type === 'transfer' ? item.type === 'transfer' : item.type === type)) ?? [];
+    type === 'adjustment'
+      ? []
+      : (categories.data?.filter((item) => item.type === type && !isAdjustmentCategory(item)) ?? []);
   const availableDestinationAccounts = accounts.data?.filter((item) => item.id !== accountId) ?? [];
 
   return (
@@ -111,13 +143,13 @@ export default function TransactionFormScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.label, { color: theme.inkMuted }]}>TYPE</Text>
         <View style={styles.typeRow}>
-          {(['expense', 'income', 'transfer'] as const).map((value) => (
+          {TRANSACTION_TYPES.map(({ key, label }) => (
             <Pill
-              key={value}
-              label={value[0].toUpperCase() + value.slice(1)}
-              tone={value}
-              selected={type === value}
-              onPress={() => setType(value)}
+              key={key}
+              label={label}
+              tone={key === 'adjustment' ? 'transfer' : key}
+              selected={type === key}
+              onPress={() => selectType(key)}
             />
           ))}
         </View>
@@ -126,8 +158,8 @@ export default function TransactionFormScreen() {
           <Text style={[styles.currency, { color: theme.inkMuted }]}>₹</Text>
           <TextInput
             value={amount}
-            onChangeText={setAmount}
-            keyboardType="decimal-pad"
+            onChangeText={(value) => setAmount(type === 'adjustment' ? value : value.replace(/-/g, ''))}
+            keyboardType={type === 'adjustment' ? 'numbers-and-punctuation' : 'decimal-pad'}
             placeholder="0.00"
             placeholderTextColor={theme.inkMuted}
             style={[styles.amountInput, { color: theme.ink }]}
@@ -142,17 +174,29 @@ export default function TransactionFormScreen() {
           style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink }]}
           autoFocus={!existing}
         />
-        <Text style={[styles.label, { color: theme.inkMuted }]}>CATEGORY</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalPills}>
-          {availableCategories.map((item) => (
-            <Pill
-              key={item.id}
-              label={item.name}
-              selected={categoryId === item.id}
-              onPress={() => setCategoryId(item.id)}
-            />
-          ))}
-        </ScrollView>
+        {type === 'adjustment' ? (
+          <Text style={[styles.hint, { color: theme.inkMuted }]}>
+            Use a negative amount (e.g. -250) to reduce the balance. Adjustments are excluded from income and spending.
+          </Text>
+        ) : (
+          <>
+            <Text style={[styles.label, { color: theme.inkMuted }]}>CATEGORY</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalPills}
+            >
+              {availableCategories.map((item) => (
+                <Pill
+                  key={item.id}
+                  label={item.name}
+                  selected={categoryId === item.id}
+                  onPress={() => setCategoryId(item.id)}
+                />
+              ))}
+            </ScrollView>
+          </>
+        )}
         {accounts.data?.length ? (
           <>
             <Text style={[styles.label, { color: theme.inkMuted }]}>
@@ -163,7 +207,9 @@ export default function TransactionFormScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalPills}
             >
-              <Pill label="No account" selected={!accountId} onPress={() => setAccountId(null)} />
+              {type !== 'adjustment' && (
+                <Pill label="No account" selected={!accountId} onPress={() => setAccountId(null)} />
+              )}
               {accounts.data.map((item) => (
                 <Pill
                   key={item.id}
@@ -234,7 +280,8 @@ const styles = StyleSheet.create({
   save: { fontSize: 14, fontWeight: '800' },
   content: { padding: spacing.md, paddingBottom: 50 },
   label: { fontSize: 11, letterSpacing: 1.2, fontWeight: '800', marginTop: spacing.lg, marginBottom: spacing.sm },
-  typeRow: { flexDirection: 'row' },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 },
+  hint: { fontSize: 12, lineHeight: 17, marginTop: spacing.sm },
   amountField: {
     borderWidth: 1,
     borderRadius: radius.md,
@@ -257,3 +304,7 @@ const styles = StyleSheet.create({
   noticeText: { flex: 1, fontSize: 12, fontWeight: '600' },
   notes: { minHeight: 92, textAlignVertical: 'top' },
 });
+
+function isAdjustmentCategory(item: Category) {
+  return !item.isCustom && item.name === SYSTEM_CATEGORY.adjustment;
+}

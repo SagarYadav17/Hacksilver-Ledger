@@ -32,7 +32,7 @@ export default function RecurringScreen() {
                   <Text style={[styles.title, { color: theme.ink }]}>{item.title}</Text>
                   <Text style={[styles.meta, { color: theme.inkMuted }]}>
                     {formatCurrency(item.amount, currency)} · {titleCase(item.frequency)} · next{' '}
-                    {formatDate(item.nextDueDate)}
+                    {formatDate(item.nextDueDate, { day: 'numeric', month: 'short', year: 'numeric' })}
                   </Text>
                 </View>
               </Pressable>

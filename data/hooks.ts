@@ -54,6 +54,7 @@ function refreshLedger(queryClient: ReturnType<typeof useQueryClient>) {
     queryClient.invalidateQueries({ queryKey: ['accounts'] }),
     queryClient.invalidateQueries({ queryKey: ['transactions'] }),
     queryClient.invalidateQueries({ queryKey: ['loans'] }),
+    queryClient.invalidateQueries({ queryKey: ['categories'] }),
   ]);
 }
 
@@ -167,8 +168,14 @@ export function useCreateRecurring() {
   const repository = useLedgerRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: Parameters<LedgerRepository['createRecurring']>[0]) => repository.createRecurring(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring'] }),
+    mutationFn: async (input: Parameters<LedgerRepository['createRecurring']>[0]) => {
+      const recurring = await repository.createRecurring(input);
+      // A start date in the past should post its due occurrences right away, not on the next foreground.
+      await repository.postDueRecurring();
+      return recurring;
+    },
+    onSuccess: () =>
+      Promise.all([queryClient.invalidateQueries({ queryKey: ['recurring'] }), refreshLedger(queryClient)]),
   });
 }
 
@@ -176,9 +183,12 @@ export function useUpdateRecurring() {
   const repository = useLedgerRepository();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Parameters<LedgerRepository['updateRecurring']>[1] }) =>
-      repository.updateRecurring(id, patch),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring'] }),
+    mutationFn: async ({ id, patch }: { id: string; patch: Parameters<LedgerRepository['updateRecurring']>[1] }) => {
+      await repository.updateRecurring(id, patch);
+      await repository.postDueRecurring();
+    },
+    onSuccess: () =>
+      Promise.all([queryClient.invalidateQueries({ queryKey: ['recurring'] }), refreshLedger(queryClient)]),
   });
 }
 
@@ -188,5 +198,18 @@ export function useToggleRecurring() {
   return useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) => repository.setRecurringActive(id, active),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring'] }),
+  });
+}
+
+export function usePostDueRecurring() {
+  const repository = useLedgerRepository();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (now?: Date) => repository.postDueRecurring(now),
+    onSuccess: (posted) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['recurring'] }),
+        posted ? refreshLedger(queryClient) : undefined,
+      ]),
   });
 }

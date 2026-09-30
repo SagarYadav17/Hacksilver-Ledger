@@ -351,7 +351,19 @@ export function TransactionRow({
   const positive = transaction.type === 'income';
   const tone = positive ? theme.income : transaction.type === 'expense' ? theme.expense : theme.transfer;
   const icon =
-    transaction.type === 'income' ? 'arrow-downward' : transaction.type === 'expense' ? 'arrow-upward' : 'swap-horiz';
+    transaction.type === 'income'
+      ? 'arrow-downward'
+      : transaction.type === 'expense'
+        ? 'arrow-upward'
+        : transaction.type === 'adjustment'
+          ? 'tune'
+          : 'swap-horiz';
+  const sign =
+    positive || (transaction.type === 'adjustment' && transaction.amount > 0)
+      ? '+'
+      : transaction.type === 'expense' || transaction.type === 'adjustment'
+        ? '−'
+        : '';
   return (
     <MotionPressable onPress={onPress} style={styles.transactionRow}>
       <View
@@ -378,9 +390,7 @@ export function TransactionRow({
         </Text>
       </View>
       <Text style={[styles.transactionAmount, { color: tone }]}>
-        {hidden
-          ? '••••'
-          : `${positive ? '+' : transaction.type === 'expense' ? '−' : ''}${formatCurrency(transaction.amount, currency)}`}
+        {hidden ? '••••' : `${sign}${formatCurrency(Math.abs(transaction.amount), currency)}`}
       </Text>
     </MotionPressable>
   );

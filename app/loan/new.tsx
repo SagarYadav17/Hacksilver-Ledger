@@ -14,6 +14,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCreateLoan } from '@/data/hooks';
 import type { LoanType } from '@/domain/types';
+import { calculateEmi } from '@/domain/loan';
+import { formatCurrency } from '@/lib/format';
+import { useAppStore } from '@/store/app-store';
 import { radius, spacing, useAppTheme } from '@/lib/theme';
 import { Pill } from '@/components/ui';
 
@@ -27,19 +30,34 @@ export default function NewLoanScreen() {
   const [tenure, setTenure] = useState('12');
   const [emi, setEmi] = useState('');
   const [type, setType] = useState<LoanType>('taken');
+  const currency = useAppStore((state) => state.currency);
+  const principal = parseNumber(amount);
+  const rate = interest.trim() ? parseNumber(interest) : 0;
+  const months = parseNumber(tenure);
+  const validPrincipal = Number.isFinite(principal) && principal > 0;
+  const validRate = Number.isFinite(rate) && rate >= 0 && rate <= 100;
+  const validMonths = Number.isInteger(months) && months >= 1 && months <= 600;
+  const computedEmi = validPrincipal && validRate && validMonths ? calculateEmi(principal, rate, months) : null;
   const save = () => {
-    const principal = Number(amount);
-    const months = Number(tenure);
-    const emiValue = Number(emi) || principal / months;
-    if (!title.trim() || principal <= 0 || months <= 0) {
-      Alert.alert('Complete the loan', 'Add a title, amount, and valid tenure.');
+    const customEmi = emi.trim() ? parseNumber(emi) : null;
+    if (!title.trim() || !validPrincipal) {
+      Alert.alert('Complete the loan', 'Add a title and a positive amount.');
       return;
     }
+    if (!validRate || !validMonths) {
+      Alert.alert('Check the terms', 'Interest must be 0–100% and tenure a whole number of 1–600 months.');
+      return;
+    }
+    if (customEmi !== null && !(Number.isFinite(customEmi) && customEmi > 0)) {
+      Alert.alert('Check the EMI', 'Enter a positive EMI or leave it blank to auto-calculate.');
+      return;
+    }
+    const emiValue = customEmi ?? computedEmi ?? 0;
     create.mutate(
       {
         title: title.trim(),
         amount: principal,
-        interestRate: Number(interest) || 0,
+        interestRate: rate,
         tenureMonths: months,
         type,
         startDate: new Date().toISOString(),
@@ -116,10 +134,16 @@ export default function NewLoanScreen() {
           value={emi}
           onChangeText={setEmi}
           keyboardType="decimal-pad"
-          placeholder="Auto-calculated"
+          placeholder={computedEmi !== null ? String(computedEmi) : 'Auto-calculated'}
           placeholderTextColor={theme.inkMuted}
           style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink }]}
         />
+        {computedEmi !== null && (
+          <Text style={[styles.hint, { color: theme.inkMuted }]}>
+            Calculated EMI: {formatCurrency(computedEmi, currency)} / month
+            {emi.trim() ? ' (overridden by your value)' : ''}
+          </Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -142,4 +166,10 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md, fontSize: 15 },
   two: { flexDirection: 'row', gap: spacing.sm },
   half: { flex: 1 },
+  hint: { fontSize: 12, marginTop: spacing.sm },
 });
+
+function parseNumber(value: string): number {
+  const cleaned = value.replace(/,/g, '').trim();
+  return cleaned ? Number(cleaned) : Number.NaN;
+}

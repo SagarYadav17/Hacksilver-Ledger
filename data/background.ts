@@ -1,21 +1,25 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
-import * as SQLite from 'expo-sqlite';
-import { initializeDatabase } from './schema';
+import type { SQLiteDatabase } from 'expo-sqlite';
+import { openLedgerDatabase } from './database';
+import { LedgerRepository } from './repository';
 import { syncService } from './sync';
 
 export const BACKGROUND_SYNC_TASK = 'hacksilver-background-sync';
 
 TaskManager.defineTask(BACKGROUND_SYNC_TASK, async () => {
+  let db: SQLiteDatabase | null = null;
   try {
-    const db = await SQLite.openDatabaseAsync('hacksilver_ledger.db');
-    await initializeDatabase(db);
+    db = await openLedgerDatabase();
+    await new LedgerRepository(db).postDueRecurring();
     const result = await syncService.restoreSession();
     if (!result) return BackgroundTask.BackgroundTaskResult.Success;
     const sync = await syncService.sync(db);
     return sync.success ? BackgroundTask.BackgroundTaskResult.Success : BackgroundTask.BackgroundTaskResult.Failed;
   } catch {
     return BackgroundTask.BackgroundTaskResult.Failed;
+  } finally {
+    await db?.closeAsync().catch(() => undefined);
   }
 });
 

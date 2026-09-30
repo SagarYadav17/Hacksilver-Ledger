@@ -12,6 +12,8 @@
     "react/react-in-jsx-scope": "off",
     "react/no-unstable-nested-components": "off",
     "react/set-state-in-effect": "off",
-    "react/preserve-manual-memoization": "off"
+    "react/preserve-manual-memoization": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-array-reverse": "off"
   }
 }

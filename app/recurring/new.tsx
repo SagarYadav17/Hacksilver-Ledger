@@ -39,9 +39,11 @@ export default function NewRecurringScreen() {
   const [frequency, setFrequency] = useState<Frequency>('monthly');
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [dueDate, setDueDate] = useState(() => toDateInput(new Date().toISOString()));
 
   useEffect(() => {
     if (!existing) return;
+    setDueDate(toDateInput(existing.nextDueDate));
     setTitle(existing.title);
     setAmount(String(existing.amount));
     setType(existing.type);
@@ -62,11 +64,26 @@ export default function NewRecurringScreen() {
       Alert.alert('Complete the recurring entry', 'Add a title, amount, and category.');
       return;
     }
+    const due = parseDateInput(dueDate);
+    if (!due) {
+      Alert.alert('Check the date', 'Use the format YYYY-MM-DD.');
+      return;
+    }
     if (existing) {
+      // Changing the next due date re-anchors the schedule (day-of-month) to that date.
+      const reschedule = dueDate !== toDateInput(existing.nextDueDate);
       update.mutate(
         {
           id: existing.id,
-          patch: { title: title.trim(), amount: value, type, categoryId: category, accountId, frequency },
+          patch: {
+            title: title.trim(),
+            amount: value,
+            type,
+            categoryId: category,
+            accountId,
+            frequency,
+            ...(reschedule ? { nextDueDate: due, startDate: due } : {}),
+          },
         },
         { onSuccess: () => router.back(), onError: (error) => Alert.alert('Could not save', error.message) },
       );
@@ -79,8 +96,8 @@ export default function NewRecurringScreen() {
           categoryId: category,
           accountId,
           frequency,
-          startDate: new Date().toISOString(),
-          nextDueDate: new Date().toISOString(),
+          startDate: due,
+          nextDueDate: due,
           isActive: true,
           notes: null,
         },
@@ -147,6 +164,16 @@ export default function NewRecurringScreen() {
             />
           ))}
         </View>
+        <Text style={[styles.label, { color: theme.inkMuted }]}>{existing ? 'NEXT DUE DATE' : 'START DATE'}</Text>
+        <TextInput
+          value={dueDate}
+          onChangeText={setDueDate}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor={theme.inkMuted}
+          keyboardType="numbers-and-punctuation"
+          maxLength={10}
+          style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink }]}
+        />
         <Text style={[styles.label, { color: theme.inkMuted }]}>CATEGORY</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {matchingCategories.map((item) => (
@@ -195,3 +222,20 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
   input: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md, fontSize: 15 },
 });
+
+const pad = (value: number) => String(value).padStart(2, '0');
+
+function toDateInput(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Local midnight of a YYYY-MM-DD string, so the entry posts on that calendar day. */
+function parseDateInput(value: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(year, month - 1, day);
+  return date.getMonth() === month - 1 && date.getDate() === day ? date.toISOString() : null;
+}

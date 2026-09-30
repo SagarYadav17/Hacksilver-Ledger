@@ -53,6 +53,7 @@ export default function ActivityScreen() {
         <Pill label="Income" tone="income" selected={type === 'income'} onPress={() => setType('income')} />
         <Pill label="Expense" tone="expense" selected={type === 'expense'} onPress={() => setType('expense')} />
         <Pill label="Transfer" tone="transfer" selected={type === 'transfer'} onPress={() => setType('transfer')} />
+        <Pill label="Adjustment" selected={type === 'adjustment'} onPress={() => setType('adjustment')} />
       </View>
       <View style={styles.sortRow}>
         <Text style={[styles.resultText, { color: theme.inkMuted }]}>{transactions.data?.length ?? 0} entries</Text>
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
     height: 48,
   },
   searchInput: { flex: 1, fontSize: 14 },
-  pills: { flexDirection: 'row', marginTop: spacing.md },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 8, marginTop: spacing.md },
   sortRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

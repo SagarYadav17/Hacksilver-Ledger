@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/app-store';
 import { radius, spacing, useAppTheme } from '@/lib/theme';
 import { Header, Pill, Screen } from '@/components/ui';
-import { clearPin, isAppLockEnabled, setPin as persistPin } from '@/data/security';
+import {
+  clearPin,
+  isAppLockEnabled,
+  isBiometricEnabled,
+  setBiometricEnabled,
+  setPin as persistPin,
+} from '@/data/security';
+import { authenticateBiometric, canUseBiometrics, PinVerifyForm } from '@/components/security';
+
+type PinModal = 'create' | 'change' | 'verify-disable' | 'verify-change' | null;
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -15,29 +24,45 @@ export default function SettingsScreen() {
   const hidden = useAppStore((state) => state.hideBalances);
   const setHidden = useAppStore((state) => state.setHideBalances);
   const [lock, setLock] = useState(false);
-  const [pinModal, setPinModal] = useState(false);
+  const [biometric, setBiometric] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [pinModal, setPinModal] = useState<PinModal>(null);
   const [pin, setPin] = useState('');
   const [confirm, setConfirm] = useState('');
   useEffect(() => {
     void isAppLockEnabled().then(setLock);
+    void isBiometricEnabled().then(setBiometric);
+    void canUseBiometrics().then(setBiometricAvailable);
   }, []);
+  const closeModal = () => {
+    setPin('');
+    setConfirm('');
+    setPinModal(null);
+  };
   const savePin = async () => {
     if (pin.length < 4 || pin !== confirm) {
       Alert.alert('Check your PIN', 'Use at least four digits and enter the same PIN twice.');
       return;
     }
     await persistPin(pin);
-    setPin('');
-    setConfirm('');
-    setPinModal(false);
+    closeModal();
     setLock(true);
   };
-  const toggleLock = async (value: boolean) => {
-    if (value) setPinModal(true);
-    else {
-      await clearPin();
-      setLock(false);
+  const onVerified = async () => {
+    if (pinModal === 'verify-change') {
+      setPinModal('change');
+      return;
     }
+    await clearPin();
+    closeModal();
+    setLock(false);
+    setBiometric(false);
+  };
+  const toggleLock = (value: boolean) => setPinModal(value ? 'create' : 'verify-disable');
+  const toggleBiometric = async (value: boolean) => {
+    if (value && !(await authenticateBiometric())) return;
+    await setBiometricEnabled(value);
+    setBiometric(value);
   };
   return (
     <Screen>
@@ -85,6 +110,29 @@ export default function SettingsScreen() {
             thumbColor={theme.white}
           />
         </View>
+        {lock && biometricAvailable ? (
+          <View style={styles.settingRow}>
+            <View style={styles.copy}>
+              <Text style={[styles.label, { color: theme.ink }]}>Use biometrics</Text>
+              <Text style={[styles.caption, { color: theme.inkMuted }]}>Unlock with your face or fingerprint</Text>
+            </View>
+            <Switch
+              value={biometric}
+              onValueChange={toggleBiometric}
+              trackColor={{ false: theme.line, true: theme.primary }}
+              thumbColor={theme.white}
+            />
+          </View>
+        ) : null}
+        {lock ? (
+          <Pressable onPress={() => setPinModal('verify-change')} style={styles.settingRow}>
+            <View style={styles.copy}>
+              <Text style={[styles.label, { color: theme.ink }]}>Change PIN</Text>
+              <Text style={[styles.caption, { color: theme.inkMuted }]}>Confirm your current PIN first</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.inkMuted} />
+          </Pressable>
+        ) : null}
       </View>
       <View style={[styles.note, { backgroundColor: dark ? theme.surfaceAlt : theme.primarySoft }]}>
         <MaterialIcons name="shield" size={19} color={theme.primary} />
@@ -92,39 +140,54 @@ export default function SettingsScreen() {
           Your ledger stays on this device by default. Cloud sync is always opt-in.
         </Text>
       </View>
-      <Modal visible={pinModal} transparent animationType="slide" onRequestClose={() => setPinModal(false)}>
-        <View style={styles.modalBackdrop}>
+      <Modal visible={pinModal !== null} transparent animationType="slide" onRequestClose={closeModal}>
+        <KeyboardAvoidingView behavior="padding" style={styles.modalBackdrop}>
           <View style={[styles.modal, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.modalTitle, { color: theme.ink }]}>Create a PIN</Text>
-            <Text style={[styles.caption, { color: theme.inkMuted }]}>You’ll use this whenever the app is locked.</Text>
-            <TextInput
-              value={pin}
-              onChangeText={(value) => setPin(value.replace(/\D/g, '').slice(0, 6))}
-              secureTextEntry
-              keyboardType="number-pad"
-              placeholder="PIN"
-              placeholderTextColor={theme.inkMuted}
-              style={[styles.modalInput, { color: theme.ink, borderColor: theme.line }]}
-            />
-            <TextInput
-              value={confirm}
-              onChangeText={(value) => setConfirm(value.replace(/\D/g, '').slice(0, 6))}
-              secureTextEntry
-              keyboardType="number-pad"
-              placeholder="Confirm PIN"
-              placeholderTextColor={theme.inkMuted}
-              style={[styles.modalInput, { color: theme.ink, borderColor: theme.line }]}
-            />
-            <View style={styles.modalActions}>
-              <Pressable onPress={() => setPinModal(false)}>
-                <Text style={[styles.cancel, { color: theme.inkMuted }]}>Cancel</Text>
-              </Pressable>
-              <Pressable onPress={savePin} style={[styles.primary, { backgroundColor: theme.primary }]}>
-                <Text style={styles.primaryText}>Enable</Text>
-              </Pressable>
-            </View>
+            {pinModal === 'verify-disable' || pinModal === 'verify-change' ? (
+              <PinVerifyForm
+                key={pinModal}
+                title={pinModal === 'verify-disable' ? 'Turn off app lock' : 'Change PIN'}
+                onVerified={onVerified}
+                onCancel={closeModal}
+              />
+            ) : (
+              <>
+                <Text style={[styles.modalTitle, { color: theme.ink }]}>
+                  {pinModal === 'change' ? 'Choose a new PIN' : 'Create a PIN'}
+                </Text>
+                <Text style={[styles.caption, { color: theme.inkMuted }]}>
+                  You’ll use this whenever the app is locked.
+                </Text>
+                <TextInput
+                  value={pin}
+                  onChangeText={(value) => setPin(value.replace(/\D/g, '').slice(0, 6))}
+                  secureTextEntry
+                  keyboardType="number-pad"
+                  placeholder="PIN"
+                  placeholderTextColor={theme.inkMuted}
+                  style={[styles.modalInput, { color: theme.ink, borderColor: theme.line }]}
+                />
+                <TextInput
+                  value={confirm}
+                  onChangeText={(value) => setConfirm(value.replace(/\D/g, '').slice(0, 6))}
+                  secureTextEntry
+                  keyboardType="number-pad"
+                  placeholder="Confirm PIN"
+                  placeholderTextColor={theme.inkMuted}
+                  style={[styles.modalInput, { color: theme.ink, borderColor: theme.line }]}
+                />
+                <View style={styles.modalActions}>
+                  <Pressable onPress={closeModal}>
+                    <Text style={[styles.cancel, { color: theme.inkMuted }]}>Cancel</Text>
+                  </Pressable>
+                  <Pressable onPress={savePin} style={[styles.primary, { backgroundColor: theme.primary }]}>
+                    <Text style={styles.primaryText}>{pinModal === 'change' ? 'Save' : 'Enable'}</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </Screen>
   );

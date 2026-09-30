@@ -1,3 +1,5 @@
+import * as Crypto from 'expo-crypto';
+
 export type TransactionType = 'income' | 'expense' | 'transfer' | 'adjustment';
 export type AccountType = 'cash' | 'bank' | 'credit_card' | 'other';
 export type LoanType = 'given' | 'taken';
@@ -124,6 +126,9 @@ export interface BackupRecord {
   kind: 'export' | 'pre_restore';
 }
 
+/** System categories are created on demand by the repository (is_custom = 0). */
+export const SYSTEM_CATEGORY = { adjustment: 'Adjustment', loans: 'Loans' } as const;
+
 export const TRANSACTION_TYPES: Array<{ key: TransactionType; label: string }> = [
   { key: 'expense', label: 'Expense' },
   { key: 'income', label: 'Income' },
@@ -132,11 +137,7 @@ export const TRANSACTION_TYPES: Array<{ key: TransactionType; label: string }> =
 ];
 
 export function newId(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
-    const random = Math.floor(Math.random() * 16);
-    const value = character === 'x' ? random : (random & 0x3) | 0x8;
-    return value.toString(16);
-  });
+  return Crypto.randomUUID();
 }
 
 export function nowIso(): string {

@@ -39,7 +39,9 @@ export default function DashboardScreen() {
     const ordered = [...(transactions.data ?? [])]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(-10);
-    const delta = (type: string, amount: number) => (type === 'income' ? amount : type === 'expense' ? -amount : 0);
+    // Balance reconstruction: adjustments move balances (signed); transfers net to zero.
+    const delta = (type: string, amount: number) =>
+      type === 'income' || type === 'adjustment' ? amount : type === 'expense' ? -amount : 0;
     const ending = summary.data?.balance ?? 0;
     let opening = ending - ordered.reduce((total, item) => total + delta(item.type, item.amount), 0);
     const values = [opening];

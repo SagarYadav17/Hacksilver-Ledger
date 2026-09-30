@@ -1,10 +1,20 @@
 import Decimal from 'decimal.js-light';
 
+const CURRENCY_LOCALES: Record<string, string> = { INR: 'en-IN', USD: 'en-US', EUR: 'en-IE', GBP: 'en-GB' };
+
 export function formatCurrency(value: number, currency = 'INR', hidden = false): string {
   if (hidden) return '••••••';
-  const symbols: Record<string, string> = { INR: '₹', USD: '$', EUR: '€', GBP: '£' };
-  const symbol = symbols[currency] ?? currency;
-  return `${symbol}${new Decimal(value).toDecimalPlaces(2).toNumber().toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const amount = new Decimal(value).toDecimalPlaces(2).toNumber();
+  const options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  try {
+    return new Intl.NumberFormat(CURRENCY_LOCALES[currency] ?? 'en-US', {
+      ...options,
+      style: 'currency',
+      currency,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount.toLocaleString('en-US', options)}`;
+  }
 }
 
 export function formatDate(

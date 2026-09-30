@@ -9,7 +9,8 @@ Create these Base collections: `categories`, `accounts`, `loans`,
 
 Every collection requires `user` (single required relation to `users`),
 `local_sync_id` (required UUID text), `updated_at` (required UTC ISO-8601
-text), and optional `deleted_at` (UTC tombstone text). Add a unique index on
+text), optional `deleted_at` (UTC tombstone text), and the `created`/`updated`
+autodate fields (default for Admin UI collections in v0.23+). Add a unique index on
 `(user, local_sync_id)`.
 
 Use text `*_sync_id` fields for cross-record references. Do not send SQLite
@@ -23,12 +24,22 @@ Apply the same collection rules everywhere:
 
 - List/View: `user = @request.auth.id`
 - Create: `@request.auth.id != "" && @request.body.user = @request.auth.id`
-- Update/Delete: `user = @request.auth.id`
+- Update: `user = @request.auth.id && (@request.body.user:isset = false || @request.body.user = @request.auth.id)`
+  (stops a user from reassigning a record to another account)
+- Delete: `user = @request.auth.id`
 
-Sync pushes local pending changes, then pulls remote rows in dependency order:
-categories, accounts, loans, recurring transactions, transactions. Tombstones
-are retained. For simultaneous edits, newest UTC `updated_at` wins; the local
-loser remains pending for retry.
+The app requires `https://` server URLs except for local development hosts
+(`localhost`, `127.0.0.1`, `[::1]`, `10.0.2.2`, `*.localhost`).
+
+Sync is incremental and runs one at a time. It pushes local rows changed since
+the last successful sync (cursor = sync start time), then pulls remote rows
+whose server-set `updated` is at or after the newest one previously seen for
+that collection, in dependency order: categories, accounts, loans, recurring
+transactions, transactions. Remote records are
+schema-validated; bad or unappliable records are skipped, counted in the result
+message, and retried next sync. Tombstones are retained. For simultaneous
+edits, newest UTC `updated_at` wins and local wins are logged in
+`sync_conflicts`.
 
 Development database and PocketBase collection state are disposable. Clear app
 data and reset development collections after changing the sync schema. Full
